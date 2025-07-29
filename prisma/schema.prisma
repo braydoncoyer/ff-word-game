@@ -1,0 +1,66 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model SecretWord {
+  id        String   @id @default(cuid())
+  word      String   @unique @db.VarChar(5)
+  used      Boolean  @default(false)
+  usedDate  DateTime?
+  createdAt DateTime @default(now())
+
+  dailyPuzzles DailyPuzzle[]
+
+  @@map("secret_words")
+}
+
+model Dictionary {
+  id        String   @id @default(cuid())
+  word      String   @unique @db.VarChar(5)
+  createdAt DateTime @default(now())
+
+  @@map("dictionary")
+}
+
+model DailyPuzzle {
+  id           String   @id @default(cuid())
+  date         DateTime @unique @db.Date
+  secretWordId String
+  topWord      String   @db.VarChar(5)
+  bottomWord   String   @db.VarChar(5)
+  createdAt    DateTime @default(now())
+
+  secretWord SecretWord @relation(fields: [secretWordId], references: [id])
+  userGames  UserGame[]
+
+  @@map("daily_puzzles")
+}
+
+model UserGame {
+  id            String   @id @default(cuid())
+  sessionId     String
+  dailyPuzzleId String
+  currentTop    String   @db.VarChar(5)
+  currentBottom String   @db.VarChar(5)
+  guesses       String[] @db.VarChar(5)
+  completed     Boolean  @default(false)
+  won           Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  dailyPuzzle DailyPuzzle @relation(fields: [dailyPuzzleId], references: [id])
+
+  @@unique([sessionId, dailyPuzzleId])
+  @@map("user_games")
+}
