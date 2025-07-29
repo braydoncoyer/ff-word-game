@@ -410,31 +410,50 @@ export async function seedDatabase() {
   console.log('Starting database seed...')
   
   try {
-    // Seed secret words
-    console.log('Seeding secret words...')
-    for (const word of SECRET_WORDS) {
-      await prisma.secretWord.upsert({
-        where: { word },
-        create: { word },
-        update: {}
-      })
-    }
-    console.log(`Seeded ${SECRET_WORDS.length} secret words`)
+    // Filter and clean words to ensure they are exactly 5 letters
+    const validSecretWords = SECRET_WORDS
+      .filter(word => word.length === 5)
+      .map(word => word.toLowerCase().trim())
     
-    // Seed dictionary words
+    const validDictionaryWords = [...new Set(DICTIONARY_WORDS
+      .filter(word => word.length === 5)
+      .map(word => word.toLowerCase().trim()))]
+    
+    console.log(`Filtered to ${validSecretWords.length} valid secret words`)
+    console.log(`Filtered to ${validDictionaryWords.length} valid dictionary words`)
+    
+    // Seed secret words in batches
+    console.log('Seeding secret words...')
+    await prisma.secretWord.createMany({
+      data: validSecretWords.map(word => ({ word })),
+      skipDuplicates: true
+    })
+    console.log(`Seeded ${validSecretWords.length} secret words`)
+    
+    // Seed dictionary words in batches
     console.log('Seeding dictionary words...')
-    for (const word of DICTIONARY_WORDS) {
-      await prisma.dictionary.upsert({
-        where: { word },
-        create: { word },
-        update: {}
-      })
-    }
-    console.log(`Seeded ${DICTIONARY_WORDS.length} dictionary words`)
+    await prisma.dictionary.createMany({
+      data: validDictionaryWords.map(word => ({ word })),
+      skipDuplicates: true
+    })
+    console.log(`Seeded ${validDictionaryWords.length} dictionary words`)
     
     console.log('Database seed completed successfully!')
   } catch (error) {
     console.error('Error seeding database:', error)
     throw error
   }
+}
+
+// If this file is run directly, execute the seed
+if (require.main === module) {
+  seedDatabase()
+    .then(() => {
+      console.log('Database seeded successfully!')
+      process.exit(0)
+    })
+    .catch((error) => {
+      console.error('Seeding failed:', error)
+      process.exit(1)
+    })
 }

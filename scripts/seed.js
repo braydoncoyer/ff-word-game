@@ -1,13 +1,10 @@
-const { seedDatabase } = require('../src/lib/seed.ts')
+const { execSync } = require('child_process')
 
-async function main() {
-  try {
-    await seedDatabase()
-    process.exit(0)
-  } catch (error) {
-    console.error('Seed script failed:', error)
-    process.exit(1)
-  }
+try {
+  console.log('Running seed script with tsx...')
+  execSync('npx tsx src/lib/seed.ts', { stdio: 'inherit' })
+  console.log('Seed completed successfully!')
+} catch (error) {
+  console.error('Seed script failed:', error)
+  process.exit(1)
 }
-
-main()

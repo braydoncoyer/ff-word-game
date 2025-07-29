@@ -1,18 +1,41 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import { submitGuess, type GameState } from '@/lib/actions'
+import { useState, useTransition, useEffect } from 'react'
+import { submitGuess, initializeGame, type GameState } from '@/lib/actions'
 import { Keyboard } from './Keyboard'
 
 interface GameBoardProps {
-  initialState: GameState
+  initialState: GameState | null
 }
 
 export function GameBoard({ initialState }: GameBoardProps) {
-  const [gameState, setGameState] = useState(initialState)
+  const [gameState, setGameState] = useState<GameState | null>(initialState)
   const [currentGuess, setCurrentGuess] = useState('')
   const [message, setMessage] = useState('')
   const [isPending, startTransition] = useTransition()
+
+  // Initialize game if no initial state
+  useEffect(() => {
+    if (!gameState) {
+      startTransition(async () => {
+        const initialized = await initializeGame()
+        if (initialized) {
+          setGameState(initialized)
+        }
+      })
+    }
+  }, [gameState])
+
+  if (!gameState) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading today's puzzle...</p>
+        </div>
+      </div>
+    )
+  }
 
   const handleKeyPress = (key: string) => {
     if (gameState.completed) return

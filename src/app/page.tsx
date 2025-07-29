@@ -15,22 +15,6 @@ function LoadingGame() {
 
 async function Game() {
   const gameState = await getUserGameState();
-
-  if (!gameState) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">
-            Game Unavailable
-          </h1>
-          <p className="text-gray-600">
-            Unable to load today&apos;s puzzle. Please try again later.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return <GameBoard initialState={gameState} />;
 }
 

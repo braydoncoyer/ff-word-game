@@ -29,15 +29,20 @@ async function getOrCreateSessionId(): Promise<string> {
   
   if (!sessionId) {
     sessionId = uuidv4()
-    cookieStore.set('sessionId', sessionId, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 60 * 60 * 24 * 365 // 1 year
-    })
+    // Note: Cookie will be set in the server action when needed
   }
   
   return sessionId
+}
+
+async function setSessionCookie(sessionId: string) {
+  const cookieStore = await cookies()
+  cookieStore.set('sessionId', sessionId, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 60 * 60 * 24 * 365 // 1 year
+  })
 }
 
 export async function getTodaysPuzzle(): Promise<DailyPuzzleData | null> {
@@ -113,10 +118,60 @@ async function generateDailyPuzzle(date: Date) {
   return puzzle
 }
 
-export async function getUserGameState(): Promise<GameState | null> {
+export async function initializeGame(): Promise<GameState | null> {
   const sessionId = await getOrCreateSessionId()
   const puzzle = await getTodaysPuzzle()
   
+  if (!puzzle) return null
+  
+  // Set cookie for new sessions
+  const cookieStore = await cookies()
+  if (!cookieStore.get('sessionId')?.value) {
+    await setSessionCookie(sessionId)
+  }
+  
+  let userGame = await prisma.userGame.findUnique({
+    where: {
+      sessionId_dailyPuzzleId: {
+        sessionId,
+        dailyPuzzleId: puzzle.id
+      }
+    }
+  })
+  
+  if (!userGame) {
+    // Create new game state
+    userGame = await prisma.userGame.create({
+      data: {
+        sessionId,
+        dailyPuzzleId: puzzle.id,
+        currentTop: puzzle.topWord,
+        currentBottom: puzzle.bottomWord,
+        guesses: []
+      }
+    })
+  }
+  
+  return {
+    id: userGame.id,
+    currentTop: userGame.currentTop,
+    currentBottom: userGame.currentBottom,
+    guesses: userGame.guesses,
+    completed: userGame.completed,
+    won: userGame.won,
+    secretWord: userGame.completed ? puzzle.secretWord : undefined
+  }
+}
+
+export async function getUserGameState(): Promise<GameState | null> {
+  const cookieStore = await cookies()
+  const sessionId = cookieStore.get('sessionId')?.value
+  
+  if (!sessionId) {
+    return null // Let the client initialize
+  }
+  
+  const puzzle = await getTodaysPuzzle()
   if (!puzzle) return null
   
   const userGame = await prisma.userGame.findUnique({
@@ -129,25 +184,7 @@ export async function getUserGameState(): Promise<GameState | null> {
   })
   
   if (!userGame) {
-    // Create new game state
-    const newGame = await prisma.userGame.create({
-      data: {
-        sessionId,
-        dailyPuzzleId: puzzle.id,
-        currentTop: puzzle.topWord,
-        currentBottom: puzzle.bottomWord,
-        guesses: []
-      }
-    })
-    
-    return {
-      id: newGame.id,
-      currentTop: newGame.currentTop,
-      currentBottom: newGame.currentBottom,
-      guesses: newGame.guesses,
-      completed: newGame.completed,
-      won: newGame.won
-    }
+    return null // Let the client initialize
   }
   
   return {
@@ -171,6 +208,12 @@ export async function submitGuess(guess: string): Promise<{
   
   if (!puzzle) {
     return { success: false, message: 'No puzzle available' }
+  }
+  
+  // Set cookie if this is a new session
+  const cookieStore = await cookies()
+  if (!cookieStore.get('sessionId')?.value) {
+    await setSessionCookie(sessionId)
   }
   
   // Validate guess is 5 letters
