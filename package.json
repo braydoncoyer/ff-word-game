@@ -13,11 +13,10 @@
     "db:seed": "node scripts/seed.js"
   },
   "dependencies": {
-    "@prisma/client": "^6.13.0",
+    "@supabase/supabase-js": "^2.53.0",
     "@types/uuid": "^10.0.0",
     "@vercel/postgres": "^0.10.0",
     "next": "15.4.4",
-    "prisma": "^6.13.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "uuid": "^11.1.0"

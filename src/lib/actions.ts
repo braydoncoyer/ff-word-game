@@ -1,6 +1,6 @@
 'use server'
 
-import { prisma } from '@/lib/db'
+import { supabase } from '@/lib/db'
 import { cookies } from 'next/headers'
 import { v4 as uuidv4 } from 'uuid'
 import { revalidatePath } from 'next/cache'
@@ -20,7 +20,6 @@ export interface DailyPuzzleData {
   date: string
   topWord: string
   bottomWord: string
-  secretWord: string
 }
 
 async function getOrCreateSessionId(): Promise<string> {
@@ -48,72 +47,104 @@ async function setSessionCookie(sessionId: string) {
 export async function getTodaysPuzzle(): Promise<DailyPuzzleData | null> {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
+  const todayStr = today.toISOString().split('T')[0] // YYYY-MM-DD format
   
-  let puzzle = await prisma.dailyPuzzle.findUnique({
-    where: { date: today },
-    include: { secretWord: true }
-  })
+  // Check if today's puzzle exists
+  let { data: puzzle, error } = await supabase
+    .from('daily_puzzles')
+    .select(`
+      id,
+      date,
+      topWord,
+      bottomWord,
+      secret_words(word)
+    `)
+    .eq('date', todayStr)
+    .single()
+  
+  if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
+    console.error('Error fetching puzzle:', error)
+    return null
+  }
   
   if (!puzzle) {
     // Generate today's puzzle
-    puzzle = await generateDailyPuzzle(today)
+    puzzle = await generateDailyPuzzle(todayStr)
   }
   
   return puzzle ? {
     id: puzzle.id,
-    date: puzzle.date.toISOString(),
+    date: puzzle.date,
     topWord: puzzle.topWord,
-    bottomWord: puzzle.bottomWord,
-    secretWord: puzzle.secretWord.word
+    bottomWord: puzzle.bottomWord
   } : null
 }
 
-async function generateDailyPuzzle(date: Date) {
+async function generateDailyPuzzle(dateStr: string) {
   // Get an unused secret word
-  const secretWord = await prisma.secretWord.findFirst({
-    where: { used: false }
-  })
+  const { data: secretWords, error: secretError } = await supabase
+    .from('secret_words')
+    .select('id, word')
+    .eq('used', false)
+    .limit(1)
   
-  if (!secretWord) {
+  if (secretError || !secretWords || secretWords.length === 0) {
     throw new Error('No unused secret words available')
   }
   
+  const secretWord = secretWords[0]
+  
   // Generate top and bottom words that bracket the secret word alphabetically
-  const topWords = await prisma.dictionary.findMany({
-    where: { word: { lt: secretWord.word } },
-    orderBy: { word: 'desc' },
-    take: 10
-  })
+  const { data: topWords } = await supabase
+    .from('dictionary')
+    .select('word')
+    .lt('word', secretWord.word)
+    .order('word', { ascending: false })
+    .limit(10)
   
-  const bottomWords = await prisma.dictionary.findMany({
-    where: { word: { gt: secretWord.word } },
-    orderBy: { word: 'asc' },
-    take: 10
-  })
+  const { data: bottomWords } = await supabase
+    .from('dictionary')
+    .select('word')
+    .gt('word', secretWord.word)
+    .order('word', { ascending: true })
+    .limit(10)
   
-  if (topWords.length === 0 || bottomWords.length === 0) {
+  if (!topWords || topWords.length === 0 || !bottomWords || bottomWords.length === 0) {
     throw new Error('Cannot generate bracket words for secret word')
   }
   
   const topWord = topWords[Math.floor(Math.random() * Math.min(topWords.length, 5))].word
   const bottomWord = bottomWords[Math.floor(Math.random() * Math.min(bottomWords.length, 5))].word
   
-  // Create the puzzle and mark secret word as used
-  const [puzzle] = await Promise.all([
-    prisma.dailyPuzzle.create({
-      data: {
-        date,
-        secretWordId: secretWord.id,
-        topWord,
-        bottomWord
-      },
-      include: { secretWord: true }
-    }),
-    prisma.secretWord.update({
-      where: { id: secretWord.id },
-      data: { used: true, usedDate: new Date() }
+  // Create the puzzle
+  const { data: puzzle, error: puzzleError } = await supabase
+    .from('daily_puzzles')
+    .insert({
+      date: dateStr,
+      secretWordId: secretWord.id,
+      topWord,
+      bottomWord
     })
-  ])
+    .select(`
+      id,
+      date,
+      topWord,
+      bottomWord
+    `)
+    .single()
+  
+  if (puzzleError) {
+    throw new Error('Failed to create daily puzzle')
+  }
+  
+  // Mark secret word as used
+  await supabase
+    .from('secret_words')
+    .update({ 
+      used: true, 
+      usedDate: new Date().toISOString() 
+    })
+    .eq('id', secretWord.id)
   
   return puzzle
 }
@@ -130,28 +161,50 @@ export async function initializeGame(): Promise<GameState | null> {
     await setSessionCookie(sessionId)
   }
   
-  let userGame = await prisma.userGame.findUnique({
-    where: {
-      sessionId_dailyPuzzleId: {
-        sessionId,
-        dailyPuzzleId: puzzle.id
-      }
-    }
-  })
+  // Check if user game exists
+  let { data: userGame } = await supabase
+    .from('user_games')
+    .select('*')
+    .eq('sessionId', sessionId)
+    .eq('dailyPuzzleId', puzzle.id)
+    .single()
   
   if (!userGame) {
     // Create new game state
-    userGame = await prisma.userGame.create({
-      data: {
+    const { data: newGame, error } = await supabase
+      .from('user_games')
+      .insert({
         sessionId,
         dailyPuzzleId: puzzle.id,
         currentTop: puzzle.topWord,
         currentBottom: puzzle.bottomWord,
         guesses: []
-      }
-    })
+      })
+      .select('*')
+      .single()
+    
+    if (error) {
+      console.error('Error creating user game:', error)
+      return null
+    }
+    
+    userGame = newGame
   }
   
+  // Get secret word only if game is completed
+  let secretWord: string | undefined
+  if (userGame.completed) {
+    const { data: fullPuzzle } = await supabase
+      .from('daily_puzzles')
+      .select(`
+        secret_words(word)
+      `)
+      .eq('id', puzzle.id)
+      .single()
+    
+    secretWord = fullPuzzle?.secret_words?.word
+  }
+
   return {
     id: userGame.id,
     currentTop: userGame.currentTop,
@@ -159,7 +212,7 @@ export async function initializeGame(): Promise<GameState | null> {
     guesses: userGame.guesses,
     completed: userGame.completed,
     won: userGame.won,
-    secretWord: userGame.completed ? puzzle.secretWord : undefined
+    secretWord
   }
 }
 
@@ -174,19 +227,31 @@ export async function getUserGameState(): Promise<GameState | null> {
   const puzzle = await getTodaysPuzzle()
   if (!puzzle) return null
   
-  const userGame = await prisma.userGame.findUnique({
-    where: {
-      sessionId_dailyPuzzleId: {
-        sessionId,
-        dailyPuzzleId: puzzle.id
-      }
-    }
-  })
+  const { data: userGame } = await supabase
+    .from('user_games')
+    .select('*')
+    .eq('sessionId', sessionId)
+    .eq('dailyPuzzleId', puzzle.id)
+    .single()
   
   if (!userGame) {
     return null // Let the client initialize
   }
   
+  // Get secret word only if game is completed
+  let secretWord: string | undefined
+  if (userGame.completed) {
+    const { data: fullPuzzle } = await supabase
+      .from('daily_puzzles')
+      .select(`
+        secret_words(word)
+      `)
+      .eq('id', puzzle.id)
+      .single()
+    
+    secretWord = fullPuzzle?.secret_words?.word
+  }
+
   return {
     id: userGame.id,
     currentTop: userGame.currentTop,
@@ -194,7 +259,7 @@ export async function getUserGameState(): Promise<GameState | null> {
     guesses: userGame.guesses,
     completed: userGame.completed,
     won: userGame.won,
-    secretWord: userGame.completed ? puzzle.secretWord : undefined
+    secretWord
   }
 }
 
@@ -222,22 +287,23 @@ export async function submitGuess(guess: string): Promise<{
   }
   
   // Check if word exists in dictionary
-  const isValidWord = await prisma.dictionary.findUnique({
-    where: { word: guess.toLowerCase() }
-  })
+  const { data: isValidWord } = await supabase
+    .from('dictionary')
+    .select('word')
+    .eq('word', guess.toLowerCase())
+    .single()
   
   if (!isValidWord) {
     return { success: false, message: 'Word not in dictionary' }
   }
   
-  const userGame = await prisma.userGame.findUnique({
-    where: {
-      sessionId_dailyPuzzleId: {
-        sessionId,
-        dailyPuzzleId: puzzle.id
-      }
-    }
-  })
+  // Get user game
+  const { data: userGame } = await supabase
+    .from('user_games')
+    .select('*')
+    .eq('sessionId', sessionId)
+    .eq('dailyPuzzleId', puzzle.id)
+    .single()
   
   if (!userGame) {
     return { success: false, message: 'Game not found' }
@@ -247,21 +313,56 @@ export async function submitGuess(guess: string): Promise<{
     return { success: false, message: 'Game already completed' }
   }
   
+  // Get the secret word from the database
+  const { data: fullPuzzle } = await supabase
+    .from('daily_puzzles')
+    .select(`
+      secret_words(word)
+    `)
+    .eq('id', puzzle.id)
+    .single()
+  
+  if (!fullPuzzle?.secret_words?.word) {
+    return { success: false, message: 'Puzzle not found' }
+  }
+  
   const guessLower = guess.toLowerCase()
-  const secretWord = puzzle.secretWord.toLowerCase()
+  const secretWord = fullPuzzle.secret_words.word.toLowerCase()
   const currentTop = userGame.currentTop.toLowerCase()
   const currentBottom = userGame.currentBottom.toLowerCase()
   
+  // Validate guess is within current bounds
+  if (guessLower <= currentTop) {
+    return { 
+      success: false, 
+      message: `Your guess must come after "${currentTop.toUpperCase()}" alphabetically` 
+    }
+  }
+  
+  if (guessLower >= currentBottom) {
+    return { 
+      success: false, 
+      message: `Your guess must come before "${currentBottom.toUpperCase()}" alphabetically` 
+    }
+  }
+  
   // Check if guess is correct
   if (guessLower === secretWord) {
-    const updatedGame = await prisma.userGame.update({
-      where: { id: userGame.id },
-      data: {
+    const { data: updatedGame, error } = await supabase
+      .from('user_games')
+      .update({
         guesses: [...userGame.guesses, guess],
         completed: true,
-        won: true
-      }
-    })
+        won: true,
+        updatedAt: new Date().toISOString()
+      })
+      .eq('id', userGame.id)
+      .select('*')
+      .single()
+    
+    if (error) {
+      return { success: false, message: 'Failed to update game' }
+    }
     
     revalidatePath('/')
     
@@ -275,7 +376,7 @@ export async function submitGuess(guess: string): Promise<{
         guesses: updatedGame.guesses,
         completed: updatedGame.completed,
         won: updatedGame.won,
-        secretWord: puzzle.secretWord
+        secretWord: fullPuzzle.secret_words.word
       }
     }
   }
@@ -290,14 +391,21 @@ export async function submitGuess(guess: string): Promise<{
     newBottom = guessLower
   }
   
-  const updatedGame = await prisma.userGame.update({
-    where: { id: userGame.id },
-    data: {
+  const { data: updatedGame, error } = await supabase
+    .from('user_games')
+    .update({
       currentTop: newTop,
       currentBottom: newBottom,
-      guesses: [...userGame.guesses, guess]
-    }
-  })
+      guesses: [...userGame.guesses, guess],
+      updatedAt: new Date().toISOString()
+    })
+    .eq('id', userGame.id)
+    .select('*')
+    .single()
+  
+  if (error) {
+    return { success: false, message: 'Failed to update game' }
+  }
   
   revalidatePath('/')
   
