@@ -50,8 +50,19 @@ export async function getTodaysPuzzle(): Promise<DailyPuzzleData | null> {
   const todayStr = today.toISOString().split('T')[0] // YYYY-MM-DD format
   
   // Check if today's puzzle exists
-  // @ts-expect-error - error variable is never reassigned but we need let for puzzle reassignment
-  let { data: puzzle, error } = await supabase
+  const { error } = await supabase
+    .from('daily_puzzles')
+    .select(`
+      id,
+      date,
+      topWord,
+      bottomWord,
+      secret_words(word)
+    `)
+    .eq('date', todayStr)
+    .single()
+  
+  let { data: puzzle } = await supabase
     .from('daily_puzzles')
     .select(`
       id,
