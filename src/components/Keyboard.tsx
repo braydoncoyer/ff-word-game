@@ -13,7 +13,7 @@ const KEYBOARD_ROWS = [
 
 export function Keyboard({ onKeyPress, disabled = false }: KeyboardProps) {
   return (
-    <div className="flex flex-col gap-2 select-none">
+    <div className="flex flex-col gap-1 sm:gap-2 select-none w-full max-w-xs sm:max-w-lg px-2">
       {KEYBOARD_ROWS.map((row, rowIndex) => (
         <div key={rowIndex} className="flex justify-center gap-1">
           {row.map((key) => (
@@ -23,14 +23,15 @@ export function Keyboard({ onKeyPress, disabled = false }: KeyboardProps) {
               disabled={disabled}
               className={`
                 ${key === 'ENTER' || key === 'BACKSPACE' 
-                  ? 'px-4 py-3 text-sm' 
-                  : 'w-10 h-10 text-lg'
+                  ? 'px-2 sm:px-3 py-3 sm:py-4 text-xs font-bold flex-1 max-w-12 sm:max-w-16' 
+                  : 'w-8 h-10 sm:w-10 sm:h-12 text-xs sm:text-sm'
                 }
-                font-semibold rounded-md border-2 transition-colors
+                font-bold rounded uppercase transition-all duration-150
                 ${disabled
-                  ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed'
-                  : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100 active:bg-gray-200 cursor-pointer'
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-gray-200 text-gray-900 hover:bg-gray-300 active:bg-gray-400 cursor-pointer'
                 }
+                border-0 shadow-sm hover:shadow-md active:shadow-sm
               `}
             >
               {key === 'BACKSPACE' ? '⌫' : key}

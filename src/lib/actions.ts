@@ -11,6 +11,7 @@ export interface GameState {
   currentTop: string
   currentBottom: string
   guesses: string[]
+  guessDirections?: string[] // 'up' for moving top bound, 'down' for moving bottom bound, 'win' for correct guess
   completed: boolean
   won: boolean
   secretWord?: string
@@ -268,6 +269,7 @@ export async function initializeGame(): Promise<GameState | null> {
     currentTop: userGame.currentTop,
     currentBottom: userGame.currentBottom,
     guesses: userGame.guesses,
+    guessDirections: userGame.guessDirections,
     completed: userGame.completed,
     won: userGame.won,
     secretWord
@@ -316,6 +318,7 @@ export async function getUserGameState(): Promise<GameState | null> {
     currentTop: userGame.currentTop,
     currentBottom: userGame.currentBottom,
     guesses: userGame.guesses,
+    guessDirections: userGame.guessDirections,
     completed: userGame.completed,
     won: userGame.won,
     secretWord
@@ -418,10 +421,12 @@ export async function submitGuess(guess: string): Promise<{
   
   // Check if guess is correct
   if (guessLower === secretWord) {
+    const newDirections = [...(userGame.guessDirections || []), 'win']
     const { data: updatedGame, error } = await supabase
       .from('user_games')
       .update({
         guesses: [...userGame.guesses, guess],
+        guessDirections: newDirections,
         completed: true,
         won: true,
         updatedAt: new Date().toISOString()
@@ -444,6 +449,7 @@ export async function submitGuess(guess: string): Promise<{
         currentTop: updatedGame.currentTop,
         currentBottom: updatedGame.currentBottom,
         guesses: updatedGame.guesses,
+        guessDirections: updatedGame.guessDirections,
         completed: updatedGame.completed,
         won: updatedGame.won,
         // @ts-expect-error - secret_words is array but accessed as object
@@ -455,12 +461,17 @@ export async function submitGuess(guess: string): Promise<{
   // Update bounds based on alphabetical comparison
   let newTop = currentTop
   let newBottom = currentBottom
+  let direction = ''
   
   if (guessLower < secretWord) {
     newTop = guessLower
+    direction = 'up'
   } else if (guessLower > secretWord) {
     newBottom = guessLower
+    direction = 'down'
   }
+  
+  const newDirections = [...(userGame.guessDirections || []), direction]
   
   const { data: updatedGame, error } = await supabase
     .from('user_games')
@@ -468,6 +479,7 @@ export async function submitGuess(guess: string): Promise<{
       currentTop: newTop,
       currentBottom: newBottom,
       guesses: [...userGame.guesses, guess],
+      guessDirections: newDirections,
       updatedAt: new Date().toISOString()
     })
     .eq('id', userGame.id)
@@ -488,6 +500,7 @@ export async function submitGuess(guess: string): Promise<{
       currentTop: updatedGame.currentTop,
       currentBottom: updatedGame.currentBottom,
       guesses: updatedGame.guesses,
+      guessDirections: updatedGame.guessDirections,
       completed: updatedGame.completed,
       won: updatedGame.won
     }
