@@ -4,6 +4,7 @@ import { supabase } from '@/lib/db'
 import { cookies } from 'next/headers'
 import { v4 as uuidv4 } from 'uuid'
 import { revalidatePath } from 'next/cache'
+import { wordList } from '@/lib/wordList'
 
 export interface GameState {
   id: string
@@ -344,12 +345,22 @@ export async function submitGuess(guess: string): Promise<{
     return { success: false, message: 'Guess must be 5 letters' }
   }
   
-  // Check if word exists in dictionary
-  const { data: isValidWord } = await supabase
-    .from('dictionary')
-    .select('word')
-    .eq('word', guess.toLowerCase())
-    .single()
+  // Check if word exists in dictionary (Supabase) or wordList
+  const guessLower = guess.toLowerCase()
+  const isInWordList = wordList.includes(guessLower)
+  
+  let isValidWord = false
+  if (isInWordList) {
+    isValidWord = true
+  } else {
+    const { data: supabaseWord } = await supabase
+      .from('dictionary')
+      .select('word')
+      .eq('word', guessLower)
+      .single()
+    
+    isValidWord = !!supabaseWord
+  }
   
   if (!isValidWord) {
     return { success: false, message: 'Word not in dictionary' }
@@ -385,7 +396,6 @@ export async function submitGuess(guess: string): Promise<{
     return { success: false, message: 'Puzzle not found' }
   }
   
-  const guessLower = guess.toLowerCase()
   // @ts-expect-error - secret_words is array but accessed as object
   const secretWord = fullPuzzle.secret_words.word.toLowerCase()
   const currentTop = userGame.currentTop.toLowerCase()
