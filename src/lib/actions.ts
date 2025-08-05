@@ -3,7 +3,6 @@
 import { supabase } from '@/lib/db'
 import { cookies } from 'next/headers'
 import { v4 as uuidv4 } from 'uuid'
-import { revalidatePath } from 'next/cache'
 import { wordList } from '@/lib/wordList'
 
 export interface GameState {
@@ -325,24 +324,11 @@ export async function getUserGameState(): Promise<GameState | null> {
   }
 }
 
-export async function submitGuess(guess: string): Promise<{
+// Validate word without updating game state (for pre-validation)
+export async function validateWord(guess: string): Promise<{
   success: boolean
   message: string
-  newState?: GameState
 }> {
-  const sessionId = await getOrCreateSessionId()
-  const puzzle = await getTodaysPuzzle()
-  
-  if (!puzzle) {
-    return { success: false, message: 'No puzzle available' }
-  }
-  
-  // Set cookie if this is a new session
-  const cookieStore = await cookies()
-  if (!cookieStore.get('sessionId')?.value) {
-    await setSessionCookie(sessionId)
-  }
-  
   // Validate guess is 5 letters
   if (guess.length !== 5) {
     return { success: false, message: 'Guess must be 5 letters' }
@@ -369,13 +355,61 @@ export async function submitGuess(guess: string): Promise<{
     return { success: false, message: 'Word not in dictionary' }
   }
   
-  // Get user game
-  const { data: userGame } = await supabase
-    .from('user_games')
-    .select('*')
-    .eq('sessionId', sessionId)
-    .eq('dailyPuzzleId', puzzle.id)
-    .single()
+  return { success: true, message: 'Valid word' }
+}
+
+export async function submitGuess(guess: string, skipValidation = false): Promise<{
+  success: boolean
+  message: string
+  newState?: GameState
+}> {
+  const guessLower = guess.toLowerCase()
+  
+  // Validate guess is 5 letters
+  if (guess.length !== 5) {
+    return { success: false, message: 'Guess must be 5 letters' }
+  }
+  
+  // Skip dictionary validation if we already validated (from pre-validation)
+  if (!skipValidation) {
+    const validationResult = await validateWord(guess)
+    if (!validationResult.success) {
+      return validationResult
+    }
+  }
+  
+  // Start parallel operations
+  const sessionId = await getOrCreateSessionId()
+  const puzzlePromise = getTodaysPuzzle()
+  
+  // Set cookie if this is a new session (non-blocking)
+  const cookieStore = await cookies()
+  if (!cookieStore.get('sessionId')?.value) {
+    setSessionCookie(sessionId) // Don't await this
+  }
+  
+  const puzzle = await puzzlePromise
+  if (!puzzle) {
+    return { success: false, message: 'No puzzle available' }
+  }
+  
+  // Fetch user game and secret word in parallel
+  const [userGameResult, fullPuzzleResult] = await Promise.all([
+    supabase
+      .from('user_games')
+      .select('*')
+      .eq('sessionId', sessionId)
+      .eq('dailyPuzzleId', puzzle.id)
+      .single(),
+    supabase
+      .from('daily_puzzles')
+      .select(`secret_words(word)`)
+      .eq('id', puzzle.id)
+      .single()
+  ])
+  
+  const userGame = userGameResult.data
+  const fullPuzzle = fullPuzzleResult.data
   
   if (!userGame) {
     return { success: false, message: 'Game not found' }
@@ -384,15 +418,6 @@ export async function submitGuess(guess: string): Promise<{
   if (userGame.completed) {
     return { success: false, message: 'Game already completed' }
   }
-  
-  // Get the secret word from the database
-  const { data: fullPuzzle } = await supabase
-    .from('daily_puzzles')
-    .select(`
-      secret_words(word)
-    `)
-    .eq('id', puzzle.id)
-    .single()
   
   // @ts-expect-error - secret_words is array but accessed as object
   if (!fullPuzzle?.secret_words?.word) {
@@ -438,8 +463,6 @@ export async function submitGuess(guess: string): Promise<{
     if (error) {
       return { success: false, message: 'Failed to update game' }
     }
-    
-    revalidatePath('/')
     
     return {
       success: true,
@@ -490,11 +513,9 @@ export async function submitGuess(guess: string): Promise<{
     return { success: false, message: 'Failed to update game' }
   }
   
-  revalidatePath('/')
-  
   return {
     success: true,
-    message: guessLower < secretWord ? 'Too low! Try higher.' : 'Too high! Try lower.',
+    message: '',
     newState: {
       id: updatedGame.id,
       currentTop: updatedGame.currentTop,

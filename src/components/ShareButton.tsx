@@ -92,7 +92,7 @@ export function ShareButton({ gameState }: ShareButtonProps) {
   return (
     <button
       onClick={handleShare}
-      className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center gap-2 shadow-md hover:shadow-lg"
+      className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center gap-2 shadow-md hover:shadow-lg"
     >
       {copied ? (
         <>
