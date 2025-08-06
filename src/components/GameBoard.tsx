@@ -17,7 +17,7 @@ interface GameBoardProps {
 
 export function GameBoard({ initialState }: GameBoardProps) {
   const [gameState, setGameState] = useState<GameState | null>(initialState);
-  const [currentGuess, setCurrentGuess] = useState("");
+  const [currentGuess, setCurrentGuess] = useState<string[]>(Array(5).fill(""));
   const [message, setMessage] = useState("");
   const [isPending, startTransition] = useTransition();
   const [showInstructions, setShowInstructions] = useState(false);
@@ -38,6 +38,26 @@ export function GameBoard({ initialState }: GameBoardProps) {
     }
   }, []);
 
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (showInstructions) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+    };
+  }, [showInstructions]);
+
   // Initialize game if no initial state
   useEffect(() => {
     if (!gameState) {
@@ -55,6 +75,16 @@ export function GameBoard({ initialState }: GameBoardProps) {
     setPreValidationCache(new Map());
   }, [gameState?.id]);
 
+  // Pre-validate when currentGuess reaches 5 letters
+  useEffect(() => {
+    const filledCount = currentGuess.filter(letter => letter !== "").length;
+    const word = currentGuess.join("").toLowerCase();
+    
+    if (filledCount === 5 && !gameState?.completed && !preValidationCache.has(word) && !isPreValidating) {
+      preValidateWord(currentGuess);
+    }
+  }, [currentGuess, gameState?.completed]);
+
   if (!gameState) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -67,7 +97,8 @@ export function GameBoard({ initialState }: GameBoardProps) {
   }
 
   // Pre-validate word when 5 letters are entered
-  const preValidateWord = async (word: string) => {
+  const preValidateWord = async (guessArray: string[]) => {
+    const word = guessArray.join("").toLowerCase();
     if (
       word.length !== 5 ||
       preValidationCache.has(word) ||
@@ -101,14 +132,27 @@ export function GameBoard({ initialState }: GameBoardProps) {
     }
   };
 
+  const handleTileClick = (index: number) => {
+    if (gameState.completed) return;
+    
+    // Remove the letter at the clicked position
+    setCurrentGuess(prev => {
+      const newGuess = [...prev];
+      newGuess[index] = "";
+      return newGuess;
+    });
+    setMessage("");
+  };
+
   const handleKeyPress = (key: string) => {
     if (gameState.completed) return;
 
     if (key === "ENTER") {
-      if (currentGuess.length === 5) {
+      const wordString = currentGuess.join("").toLowerCase();
+      if (wordString.length === 5) {
         startTransition(async () => {
           // Check if we have a cached validation result
-          const cachedValidation = preValidationCache.get(currentGuess);
+          const cachedValidation = preValidationCache.get(wordString);
 
           if (cachedValidation && !cachedValidation.isValid) {
             // If we know the word is invalid, show error immediately
@@ -116,14 +160,14 @@ export function GameBoard({ initialState }: GameBoardProps) {
             // Clear the cache entry
             setPreValidationCache((prev) => {
               const newCache = new Map(prev);
-              newCache.delete(currentGuess);
+              newCache.delete(wordString);
               return newCache;
             });
           } else {
             // Word is valid or not cached - proceed with full submission
             // Skip validation if we already validated it
             const skipValidation = cachedValidation?.isValid === true;
-            const result = await submitGuess(currentGuess, skipValidation);
+            const result = await submitGuess(wordString, skipValidation);
             // Only show message if there's an error
             if (!result.success) {
               setMessage(result.message);
@@ -132,7 +176,7 @@ export function GameBoard({ initialState }: GameBoardProps) {
             }
             if (result.success && result.newState) {
               setGameState(result.newState);
-              setCurrentGuess("");
+              setCurrentGuess(Array(5).fill(""));
             }
             // Clear the entire cache after submission
             setPreValidationCache(new Map());
@@ -142,17 +186,31 @@ export function GameBoard({ initialState }: GameBoardProps) {
         setMessage("Word must be 5 letters");
       }
     } else if (key === "BACKSPACE") {
-      setCurrentGuess((prev) => prev.slice(0, -1));
+      // Find the rightmost filled position and clear it
+      setCurrentGuess((prev) => {
+        const newGuess = [...prev];
+        for (let i = newGuess.length - 1; i >= 0; i--) {
+          if (newGuess[i] !== "") {
+            newGuess[i] = "";
+            break;
+          }
+        }
+        return newGuess;
+      });
       setMessage("");
-    } else if (key.length === 1 && currentGuess.length < 5) {
-      const newGuess = currentGuess + key.toLowerCase();
-      setCurrentGuess(newGuess);
+    } else if (key.length === 1) {
+      // Find the leftmost empty position and fill it
+      setCurrentGuess((prev) => {
+        const newGuess = [...prev];
+        for (let i = 0; i < newGuess.length; i++) {
+          if (newGuess[i] === "") {
+            newGuess[i] = key.toLowerCase();
+            break;
+          }
+        }
+        return newGuess;
+      });
       setMessage("");
-
-      // Pre-validate when we reach 5 letters
-      if (newGuess.length === 5) {
-        preValidateWord(newGuess);
-      }
     }
   };
 
@@ -168,15 +226,15 @@ export function GameBoard({ initialState }: GameBoardProps) {
 
   return (
     <div
-      className="flex flex-col items-center justify-between p-3 sm:p-4 md:p-6 outline-none min-h-screen"
+      className="flex flex-col items-center justify-between p-3 sm:p-4 md:p-6 outline-none h-screen max-h-screen overflow-hidden"
       tabIndex={0}
       onKeyDown={handleKeyDown}
     >
       {/* Top section with game content */}
-      <div className="flex flex-col items-center gap-4 sm:gap-6 md:gap-8 w-full">
+      <div className="flex flex-col items-center gap-3 sm:gap-4 md:gap-6 w-full flex-1 min-h-0 overflow-y-auto">
         <div className="text-center space-y-2">
           <h1
-            className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-2 md:mb-4 ${
+            className={`text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-1 sm:mb-2 md:mb-4 ${
               gameState.completed ? "text-gray-500" : "text-gray-900"
             }`}
           >
@@ -202,14 +260,14 @@ export function GameBoard({ initialState }: GameBoardProps) {
           </div>
         </div>
 
-        <div className="flex flex-col gap-4 sm:gap-6 md:gap-8 w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl px-2">
+        <div className="flex flex-col gap-3 sm:gap-4 md:gap-6 w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl px-2">
           {/* Top Word */}
           <div className="text-center">
             <div className="flex justify-center gap-2 md:gap-3">
               {Array.from(gameState.currentTop).map((letter, index) => (
                 <div
                   key={index}
-                  className={`w-12 sm:w-16 md:w-18 lg:w-21 aspect-square border-2 rounded-lg flex items-center justify-center text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold uppercase ${
+                  className={`w-10 sm:w-12 md:w-16 lg:w-18 aspect-square border-2 rounded-lg flex items-center justify-center text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold uppercase ${
                     gameState.completed
                       ? "border-gray-200 bg-gray-50 text-gray-400"
                       : "border-gray-300 bg-white text-gray-900"
@@ -229,25 +287,26 @@ export function GameBoard({ initialState }: GameBoardProps) {
                   Array.from(gameState.secretWord).map((letter, index) => (
                     <div
                       key={index}
-                      className="w-14 sm:w-16 md:w-20 lg:w-24 aspect-square border-2 border-emerald-600 bg-emerald-500 rounded-lg flex items-center justify-center text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold uppercase text-white shadow-lg"
+                      className="w-12 sm:w-14 md:w-18 lg:w-20 aspect-square border-2 border-emerald-600 bg-emerald-500 rounded-lg flex items-center justify-center text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold uppercase text-white shadow-lg"
                     >
                       {letter}
                     </div>
                   ))
                 : // Show current guess when playing
-                  Array.from({ length: 5 }, (_, index) => {
-                    const letter = currentGuess[index] || "";
+                  currentGuess.map((letter, index) => {
                     return (
-                      <div
+                      <button
                         key={index}
-                        className={`w-14 sm:w-16 md:w-20 lg:w-24 aspect-square border-2 rounded-lg flex items-center justify-center text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold uppercase ${
+                        onClick={() => handleTileClick(index)}
+                        disabled={gameState.completed}
+                        className={`w-12 sm:w-14 md:w-18 lg:w-20 aspect-square border-2 rounded-lg flex items-center justify-center text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold uppercase transition-colors ${
                           letter
-                            ? "border-gray-500 bg-white text-gray-900"
-                            : "border-gray-300 bg-gray-50 text-gray-400"
+                            ? "border-gray-500 bg-white text-gray-900 hover:bg-gray-100 cursor-pointer"
+                            : "border-gray-300 bg-gray-50 text-gray-400 cursor-default"
                         }`}
                       >
                         {letter}
-                      </div>
+                      </button>
                     );
                   })}
             </div>
@@ -259,7 +318,7 @@ export function GameBoard({ initialState }: GameBoardProps) {
               {Array.from(gameState.currentBottom).map((letter, index) => (
                 <div
                   key={index}
-                  className={`w-12 sm:w-16 md:w-18 lg:w-21 aspect-square border-2 rounded-lg flex items-center justify-center text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold uppercase ${
+                  className={`w-10 sm:w-12 md:w-16 lg:w-18 aspect-square border-2 rounded-lg flex items-center justify-center text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold uppercase ${
                     gameState.completed
                       ? "border-gray-200 bg-gray-50 text-gray-400"
                       : "border-gray-300 bg-white text-gray-900"
@@ -274,30 +333,30 @@ export function GameBoard({ initialState }: GameBoardProps) {
 
         {/* Message */}
         {message && !gameState.completed && (
-          <div className="text-center p-3 md:p-4 rounded-lg font-semibold text-sm sm:text-base md:text-lg max-w-lg bg-red-100 text-red-800 border border-red-200">
+          <div className="text-center p-2 sm:p-3 md:p-4 rounded-lg font-semibold text-xs sm:text-sm md:text-base max-w-lg bg-red-100 text-red-800 border border-red-200">
             {message}
           </div>
         )}
 
         {/* Game completed state */}
         {gameState.completed && (
-          <div className="text-center space-y-6 w-full max-w-sm sm:max-w-md md:max-w-lg">
+          <div className="text-center space-y-4 sm:space-y-6 w-full max-w-sm sm:max-w-md md:max-w-lg">
             {gameState.won ? (
-              <div className="space-y-4">
-                <div className="text-lg sm:text-xl md:text-2xl font-bold text-emerald-600">
+              <div className="space-y-2 sm:space-y-4">
+                <div className="text-base sm:text-lg md:text-xl font-bold text-emerald-600">
                   🎉 Congratulations! 🎉
                 </div>
-                <div className="text-sm sm:text-base md:text-lg text-gray-600">
+                <div className="text-xs sm:text-sm md:text-base text-gray-600">
                   Solved in {gameState.guesses.length} guess
                   {gameState.guesses.length !== 1 ? "es" : ""}!
                 </div>
               </div>
             ) : (
-              <div className="space-y-4">
-                <div className="text-lg sm:text-xl md:text-2xl font-bold text-gray-600">
+              <div className="space-y-2 sm:space-y-4">
+                <div className="text-base sm:text-lg md:text-xl font-bold text-gray-600">
                   😞 Better luck next time!
                 </div>
-                <div className="text-sm sm:text-base md:text-lg text-gray-500">
+                <div className="text-xs sm:text-sm md:text-base text-gray-500">
                   Used all {gameState.guesses.length} guesses.
                 </div>
               </div>
@@ -310,7 +369,7 @@ export function GameBoard({ initialState }: GameBoardProps) {
         )}
 
         {isPending && (
-          <div className="text-center text-gray-700 font-semibold text-sm sm:text-base md:text-lg">
+          <div className="text-center text-gray-700 font-semibold text-xs sm:text-sm md:text-base">
             Checking your guess...
           </div>
         )}
@@ -336,7 +395,7 @@ export function GameBoard({ initialState }: GameBoardProps) {
       )} */}
 
       {/* Bottom section with keyboard */}
-      <div className="w-full flex justify-center pb-4 md:pb-6">
+      <div className="w-full flex justify-center pb-2 sm:pb-3 md:pb-4 flex-shrink-0">
         <Keyboard
           onKeyPress={handleKeyPress}
           disabled={isPending || gameState.completed}

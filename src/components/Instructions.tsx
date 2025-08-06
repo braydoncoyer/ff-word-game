@@ -11,7 +11,19 @@ export function Instructions({ isOpen, onClose }: InstructionsProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4 overscroll-none"
+      onClick={(e) => {
+        // Close modal when clicking backdrop
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+      onTouchMove={(e) => {
+        // Prevent scrolling on touch devices
+        e.preventDefault();
+      }}
+    >
       <div className="bg-white rounded-lg shadow-xl max-w-sm sm:max-w-md w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
         <div className="p-4 sm:p-6">
           <div className="flex justify-between items-center mb-4">
@@ -120,7 +132,7 @@ export function HelpButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-10 h-10 sm:w-12 sm:h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center text-lg sm:text-xl font-bold z-40"
+      className="hidden sm:flex fixed bottom-6 right-6 w-12 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 items-center justify-center text-xl font-bold z-40"
       title="How to Play"
     >
       ?

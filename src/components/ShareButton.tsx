@@ -55,7 +55,7 @@ ${result} in ${guessCount} ${
     guessCount === 1 ? "guess" : "guesses"
   }! ${resultEmoji}
 
-Play at franticfive.com`;
+Play at https://franticfive.com`;
 }
 
 export function ShareButton({ gameState }: ShareButtonProps) {
