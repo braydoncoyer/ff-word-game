@@ -11,7 +11,7 @@ export function Instructions({ isOpen, onClose }: InstructionsProps) {
   if (!isOpen) return null;
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4 overscroll-none"
       onClick={(e) => {
         // Close modal when clicking backdrop
@@ -27,7 +27,9 @@ export function Instructions({ isOpen, onClose }: InstructionsProps) {
       <div className="bg-white rounded-lg shadow-xl max-w-sm sm:max-w-md w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
         <div className="p-4 sm:p-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">How to Play</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+              How to Play
+            </h2>
             <button
               onClick={onClose}
               className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
@@ -37,7 +39,7 @@ export function Instructions({ isOpen, onClose }: InstructionsProps) {
           </div>
 
           <div className="space-y-4 text-gray-700">
-            <p className="text-base sm:text-lg font-semibold text-orange-600">
+            <p className="text-base sm:text-lg font-semibold">
               Welcome to Frantic Five!
             </p>
 
@@ -117,7 +119,7 @@ export function Instructions({ isOpen, onClose }: InstructionsProps) {
           <div className="mt-6 flex justify-end">
             <button
               onClick={onClose}
-              className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
             >
               Got it!
             </button>
