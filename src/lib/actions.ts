@@ -95,41 +95,55 @@ export async function getTodaysPuzzle(): Promise<DailyPuzzleData | null> {
 }
 
 async function generateDailyPuzzle(dateStr: string) {
-  // Get an unused secret word
+  // Get unused secret words and find one with sufficient surrounding words
   const { data: secretWords, error: secretError } = await supabase
     .from('secret_words')
     .select('id, word')
     .eq('used', false)
-    .limit(1)
-  
+    .order('word', { ascending: true })
+
   if (secretError || !secretWords || secretWords.length === 0) {
     throw new Error('No unused secret words available')
   }
-  
-  const secretWord = secretWords[0]
-  
-  // Generate top and bottom words that bracket the secret word alphabetically
-  // Get all words from dictionary to ensure maximum variety
-  const { data: allTopWords } = await supabase
-    .from('dictionary')
-    .select('word')
-    .lt('word', secretWord.word)
-    .order('word', { ascending: false })
-  
-  const { data: allBottomWords } = await supabase
-    .from('dictionary')
-    .select('word')
-    .gt('word', secretWord.word)
-    .order('word', { ascending: true })
-  
-  if (!allTopWords || allTopWords.length === 0 || !allBottomWords || allBottomWords.length === 0) {
-    throw new Error('Cannot generate bracket words for secret word')
+
+  // Find a secret word that has enough words before and after it
+  let secretWord = null
+  let allTopWords = null
+  let allBottomWords = null
+
+  for (const candidate of secretWords) {
+    const { data: topWords } = await supabase
+      .from('dictionary')
+      .select('word')
+      .lt('word', candidate.word)
+      .order('word', { ascending: false })
+      .limit(1000)
+
+    const { data: bottomWords } = await supabase
+      .from('dictionary')
+      .select('word')
+      .gt('word', candidate.word)
+      .order('word', { ascending: true })
+      .limit(1000)
+
+    // Need at least 100 words on each side to generate varied brackets
+    if (topWords && topWords.length >= 100 && bottomWords && bottomWords.length >= 100) {
+      secretWord = candidate
+      allTopWords = topWords
+      allBottomWords = bottomWords
+      break
+    }
   }
-  
+
+  if (!secretWord || !allTopWords || !allBottomWords) {
+    throw new Error('No suitable secret words with enough surrounding words')
+  }
+
   const secretFirstLetter = secretWord.word.charAt(0)
-  
-  // Function to find words with different first letters, prioritizing distance
-  const findVariedWord = (words: {word: string}[], preferDirection: 'before' | 'after') => {
+  const secretCharCode = secretFirstLetter.charCodeAt(0)
+
+  // Function to find bracket words 2-4 letters away from secret word for optimal difficulty
+  const findBracketWord = (words: {word: string}[], direction: 'before' | 'after') => {
     // Group words by first letter
     const wordsByLetter = new Map<string, {word: string}[]>()
     words.forEach(w => {
@@ -139,40 +153,60 @@ async function generateDailyPuzzle(dateStr: string) {
       }
       wordsByLetter.get(firstLetter)!.push(w)
     })
-    
-    // Get letters different from secret word's first letter
+
+    // Define target letter range: 2-4 letters away from secret word
+    const minOffset = 2
+    const maxOffset = 4
+    const targetLetters: string[] = []
+
+    if (direction === 'before') {
+      // For top word: 2-4 letters before the secret word (e.g., if secret is 'm', target 'i','j','k','l')
+      for (let offset = minOffset; offset <= maxOffset; offset++) {
+        const charCode = secretCharCode - offset
+        if (charCode >= 97) { // 'a' = 97
+          targetLetters.push(String.fromCharCode(charCode))
+        }
+      }
+    } else {
+      // For bottom word: 2-4 letters after the secret word (e.g., if secret is 'm', target 'n','o','p','q')
+      for (let offset = minOffset; offset <= maxOffset; offset++) {
+        const charCode = secretCharCode + offset
+        if (charCode <= 122) { // 'z' = 122
+          targetLetters.push(String.fromCharCode(charCode))
+        }
+      }
+    }
+
+    // Find available letters in the target range
+    const availableTargetLetters = targetLetters.filter(letter => wordsByLetter.has(letter))
+
+    if (availableTargetLetters.length > 0) {
+      // Randomly select from target range
+      const selectedLetter = availableTargetLetters[Math.floor(Math.random() * availableTargetLetters.length)]
+      const wordsWithSelectedLetter = wordsByLetter.get(selectedLetter)!
+      return wordsWithSelectedLetter[Math.floor(Math.random() * wordsWithSelectedLetter.length)].word
+    }
+
+    // Fallback: if no words in ideal range, pick from different first letter
     const availableLetters = Array.from(wordsByLetter.keys())
       .filter(letter => letter !== secretFirstLetter)
-      .sort()
-    
-    if (availableLetters.length === 0) {
-      // Fallback: use any available word
-      return words[Math.floor(Math.random() * Math.min(words.length, 100))].word
+
+    if (availableLetters.length > 0) {
+      const selectedLetter = availableLetters[Math.floor(Math.random() * availableLetters.length)]
+      const wordsWithSelectedLetter = wordsByLetter.get(selectedLetter)!
+      return wordsWithSelectedLetter[Math.floor(Math.random() * wordsWithSelectedLetter.length)].word
     }
-    
-    // Prefer letters that are further away alphabetically
-    let targetLetters: string[]
-    if (preferDirection === 'before') {
-      // For top word, prefer letters that come before the secret word's first letter
-      targetLetters = availableLetters.filter(letter => letter < secretFirstLetter)
-      if (targetLetters.length === 0) targetLetters = availableLetters
-    } else {
-      // For bottom word, prefer letters that come after the secret word's first letter  
-      targetLetters = availableLetters.filter(letter => letter > secretFirstLetter)
-      if (targetLetters.length === 0) targetLetters = availableLetters
-    }
-    
-    // Select a random letter from the preferred ones
-    const selectedLetter = targetLetters[Math.floor(Math.random() * targetLetters.length)]
-    const wordsWithSelectedLetter = wordsByLetter.get(selectedLetter)!
-    
-    // Return a random word from that letter group
-    return wordsWithSelectedLetter[Math.floor(Math.random() * wordsWithSelectedLetter.length)].word
+
+    // Final fallback: use any word
+    return words[Math.floor(Math.random() * Math.min(words.length, 100))].word
   }
-  
-  const topWord = findVariedWord(allTopWords, 'before')
-  const bottomWord = findVariedWord(allBottomWords, 'after')
-  
+
+  const topWord = findBracketWord(allTopWords, 'before')
+  const bottomWord = findBracketWord(allBottomWords, 'after')
+
+  console.log(`🎮 Bracket: ${topWord} < ${secretWord.word} < ${bottomWord}`)
+  console.log(`📏 Letter distances: ${secretFirstLetter.charCodeAt(0) - topWord.charAt(0).charCodeAt(0)} before, ${bottomWord.charAt(0).charCodeAt(0) - secretFirstLetter.charCodeAt(0)} after`)
+
   // Create the puzzle
   const { data: puzzle, error: puzzleError } = await supabase
     .from('daily_puzzles')
