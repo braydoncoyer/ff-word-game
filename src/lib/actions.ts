@@ -47,6 +47,16 @@ async function setSessionCookie(sessionId: string) {
 
 export async function getTodaysPuzzle(): Promise<DailyPuzzleData | null> {
   const today = new Date()
+
+  // Dev mode: Allow date override for testing (only in non-production)
+  if (process.env.NODE_ENV !== 'production' && process.env.TEST_PUZZLE_DATE) {
+    const testDate = new Date(process.env.TEST_PUZZLE_DATE)
+    if (!isNaN(testDate.getTime())) {
+      today.setTime(testDate.getTime())
+      console.log(`🧪 DEV MODE: Using test date ${process.env.TEST_PUZZLE_DATE}`)
+    }
+  }
+
   today.setHours(0, 0, 0, 0)
   const todayStr = today.toISOString().split('T')[0] // YYYY-MM-DD format
   
@@ -84,8 +94,15 @@ export async function getTodaysPuzzle(): Promise<DailyPuzzleData | null> {
     // Generate today's puzzle
     // @ts-expect-error - puzzle type mismatch after generation
     puzzle = await generateDailyPuzzle(todayStr)
+  } else if (process.env.NODE_ENV !== 'production') {
+    // Dev mode: Log secret word for existing puzzles
+    // @ts-expect-error - secret_words is array but accessed as object
+    const secretWord = puzzle?.secret_words?.word
+    if (secretWord) {
+      console.log(`🔐 Secret word (existing puzzle): ${secretWord}`)
+    }
   }
-  
+
   return puzzle ? {
     id: puzzle.id,
     date: puzzle.date,
@@ -100,18 +117,20 @@ async function generateDailyPuzzle(dateStr: string) {
     .from('secret_words')
     .select('id, word')
     .eq('used', false)
-    .order('word', { ascending: true })
 
   if (secretError || !secretWords || secretWords.length === 0) {
     throw new Error('No unused secret words available')
   }
+
+  // Shuffle the secret words to ensure random selection across the alphabet
+  const shuffledSecretWords = secretWords.sort(() => Math.random() - 0.5)
 
   // Find a secret word that has enough words before and after it
   let secretWord = null
   let allTopWords = null
   let allBottomWords = null
 
-  for (const candidate of secretWords) {
+  for (const candidate of shuffledSecretWords) {
     const { data: topWords } = await supabase
       .from('dictionary')
       .select('word')
@@ -137,6 +156,11 @@ async function generateDailyPuzzle(dateStr: string) {
 
   if (!secretWord || !allTopWords || !allBottomWords) {
     throw new Error('No suitable secret words with enough surrounding words')
+  }
+
+  // Dev mode: Log the secret word for testing
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`🔐 Secret word: ${secretWord.word}`)
   }
 
   const secretFirstLetter = secretWord.word.charAt(0)
@@ -223,9 +247,10 @@ async function generateDailyPuzzle(dateStr: string) {
       bottomWord
     `)
     .single()
-  
+
   if (puzzleError) {
-    throw new Error('Failed to create daily puzzle')
+    console.error('Failed to create daily puzzle:', puzzleError)
+    throw new Error(`Failed to create daily puzzle: ${puzzleError.message}`)
   }
   
   // Mark secret word as used
