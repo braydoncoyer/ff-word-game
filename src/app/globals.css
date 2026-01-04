@@ -1,26 +1,597 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* NEWSPAPER EDITORIAL Design System */
+
+  /* Background Colors - Cream Palette */
+  --cream-bg: #faf8f3;
+  --cream-light: #fdfcfa;
+  --cream-dark: #f5f3ee;
+
+  /* Text Colors - Charcoal Palette */
+  --charcoal: #1a1a1a;
+  --charcoal-medium: #3d3d3d;
+  --charcoal-light: #6b6b6b;
+
+  /* Accent Colors - Newspaper Red */
+  --newspaper-red: #c41e3a;
+  --newspaper-red-dark: #a01729;
+  --newspaper-red-light: #e8dae0;
+
+  /* Border Colors */
+  --border-dark: #2d2d2d;
+  --border-medium: #8b8b8b;
+  --border-light: #d4d4d4;
+
+  /* Success State - Muted Editorial Green */
+  --success-green: #2c5f2d;
+  --success-bg: #e8f3e8;
+
+  /* Typography */
+  --font-display: var(--font-playfair);
+  --font-body: var(--font-crimson);
+  --font-masthead: var(--font-abril);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-crimson);
+  --font-display: var(--font-playfair);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-crimson), Georgia, serif;
+  background: var(--cream-bg);
+  color: var(--charcoal);
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Subtle Paper Texture Overlay */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1;
+}
+
+body > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Newspaper Rules (Horizontal Dividers) */
+.newspaper-rule {
+  width: 100%;
+  height: 1px;
+  background: var(--border-dark);
+  margin: 2rem 0;
+}
+
+.newspaper-rule-double {
+  width: 100%;
+  border-top: 3px double var(--border-dark);
+  margin: 2rem 0;
+}
+
+.newspaper-rule-light {
+  width: 100%;
+  height: 1px;
+  background: var(--border-light);
+  margin: 1.5rem 0;
+}
+
+/* Tile Styles - Newspaper Editorial */
+.tile-boundary {
+  background: var(--cream-dark);
+  border: 2px solid var(--border-dark);
+  color: var(--charcoal);
+  font-family: var(--font-crimson);
+  font-weight: 700;
+  transition: none;
+}
+
+.tile-guess {
+  background: white;
+  border: 2px solid var(--border-dark);
+  color: var(--charcoal);
+  font-family: var(--font-crimson);
+  font-weight: 700;
+  transition: border-color 200ms ease;
+}
+
+.tile-guess:hover {
+  border-color: var(--newspaper-red);
+}
+
+.tile-empty {
+  background: white;
+  border: 2px dashed var(--border-medium);
+  color: var(--charcoal);
+  transition: border-color 200ms ease;
+}
+
+.tile-success {
+  background: var(--success-bg);
+  border: 2px solid var(--success-green);
+  color: var(--success-green);
+  font-family: var(--font-crimson);
+  font-weight: 700;
+}
+
+.tile-completed {
+  background: #e5e5e5;
+  border: 2px solid var(--border-light);
+  color: var(--charcoal-light);
+  opacity: 0.6;
+}
+
+/* Keyboard Key Styles - Editorial Buttons */
+.key-editorial {
+  background: white;
+  border: 1px solid var(--border-medium);
+  color: var(--charcoal);
+  font-family: var(--font-crimson);
+  font-weight: 600;
+  transition: all 150ms ease;
+}
+
+.key-editorial:hover:not(:disabled) {
+  border-color: var(--newspaper-red);
+  background: var(--cream-light);
+}
+
+.key-editorial:active:not(:disabled) {
+  background: var(--newspaper-red-light);
+  border-color: var(--newspaper-red);
+}
+
+.key-editorial:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Button - Newspaper Red Accent */
+.btn-newspaper {
+  background: var(--newspaper-red);
+  color: white;
+  border: 1px solid var(--newspaper-red-dark);
+  font-family: var(--font-crimson);
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  transition: background-color 150ms ease;
+}
+
+.btn-newspaper:hover {
+  background: var(--newspaper-red-dark);
+}
+
+.btn-newspaper:active {
+  background: #8b1220;
+}
+
+/* Editorial Card - Clean Content Box */
+.editorial-card {
+  background: var(--cream-light);
+  border: 2px solid var(--border-dark);
+  padding: 1.5rem;
+}
+
+/* Glass Effect for Modals - Light Editorial */
+.glass-editorial {
+  background: rgba(250, 248, 243, 0.95);
+  backdrop-filter: blur(10px);
+  border: 2px solid var(--border-dark);
+}
+
+/* Typography Helpers */
+.headline {
+  font-family: var(--font-display);
+  font-weight: 900;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+  color: var(--charcoal);
+}
+
+.subheadline {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+  color: var(--charcoal);
+}
+
+.body-text {
+  font-family: var(--font-body);
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--charcoal);
+}
+
+.caption-text {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--charcoal-medium);
+}
+
+.label-caps {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--charcoal-medium);
+}
+
+/* Newspaper Masthead Title - Bold Traditional Serif */
+.masthead-title {
+  font-family: var(--font-masthead);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 0.9;
+  color: var(--charcoal);
+  text-transform: uppercase;
+}
+
+/* Newspaper Rules - Double Line Style */
+.newspaper-rule-thick {
+  width: 100%;
+  border-top: 3px solid var(--border-dark);
+  border-bottom: 1px solid var(--border-dark);
+  height: 6px;
+  margin: 0.5rem 0;
+}
+
+/* Extend horizontal rules to full width on mobile */
+@media (max-width: 640px) {
+  .newspaper-rule-thick {
+    margin-left: -1rem;
+    margin-right: -1rem;
+    width: calc(100% + 2rem);
+  }
+}
+
+/* Completion State - Newspaper Statistics Table */
+.completion-box {
+  width: 100%;
+  max-width: 54rem; /* Matches masthead content width (56rem - 2rem padding) */
+  margin: 0 auto;
+}
+
+.completion-headline {
+  font-family: var(--font-body);
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--charcoal);
+  line-height: 1.2;
+  text-align: left;
+  padding: 0 1rem;
+}
+
+.completion-headline.won {
+  color: var(--success-green);
+}
+
+/* Statistics Table Layout - Single Row */
+.stats-table {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1.5rem;
+  align-items: center;
+  padding: 1rem 1.5rem;
+}
+
+@media (max-width: 640px) {
+  .stats-table {
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+  }
+}
+
+.stats-pattern {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+@media (max-width: 640px) {
+  .stats-pattern {
+    gap: 0.5rem;
+  }
+}
+
+.stats-pattern-label {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--charcoal-medium);
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .stats-pattern-label {
+    font-size: 0.65rem;
+  }
+}
+
+.stats-pattern-emojis {
+  font-size: 1rem;
+  line-height: 1.6;
+  letter-spacing: 0.15rem;
+}
+
+@media (max-width: 640px) {
+  .stats-pattern-emojis {
+    font-size: 0.85rem;
+    letter-spacing: 0.1rem;
+  }
+}
+
+.stats-count {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--charcoal);
+  white-space: nowrap;
+}
+
+.newspaper-rule-thin {
+  width: 100%;
+  border-top: 2px solid var(--border-dark);
+  height: 2px;
+  margin: 0;
+}
+
+/* Masthead Info Container - Three Column Layout */
+.masthead-info-line {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 1rem;
+  font-family: var(--font-body);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--charcoal);
+  padding: 0.5rem 1.5rem; /* Added horizontal padding for breathing room */
+}
+
+.masthead-col-left {
+  text-align: left;
+  justify-self: start;
+  grid-column: 1;
+}
+
+.masthead-col-center {
+  text-align: center;
+  justify-self: center;
+  grid-column: 2;
+}
+
+.masthead-col-right {
+  text-align: right;
+  justify-self: end;
+  grid-column: 3;
+}
+
+/* Animations - Minimal and Subtle */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.fade-in {
+  animation: fadeIn 200ms ease;
+}
+
+.fade-out {
+  animation: fadeOut 200ms ease;
+}
+
+/* Scrollbar - Editorial Style */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--cream-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-medium);
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-dark);
+}
+
+/* Selection */
+::selection {
+  background: var(--newspaper-red);
+  color: white;
+}
+
+/* Focus States - Newspaper Red */
+*:focus-visible {
+  outline: 2px solid var(--newspaper-red);
+  outline-offset: 2px;
+}
+
+/* Newspaper Ornamental Elements */
+.ornament-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin: 1.5rem 0;
+  color: var(--charcoal-medium);
+}
+
+.ornament-divider::before,
+.ornament-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border-medium);
+}
+
+/* Column Rules - Newspaper Style */
+.column-rules {
+  position: relative;
+}
+
+.column-rules::before,
+.column-rules::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--border-dark);
+  display: none;
+}
+
+/* Show column rules on larger screens, aligned with masthead content */
+@media (min-width: 640px) {
+  .column-rules::before,
+  .column-rules::after {
+    display: block;
+  }
+
+  /* Align with masthead thick rules (accounting for px-4 padding) */
+  .column-rules::before {
+    left: calc(
+      50% - 27rem
+    ); /* max-w-4xl (56rem) - padding (2rem) = 54rem, half is 27rem */
+  }
+
+  .column-rules::after {
+    right: calc(50% - 27rem);
+  }
+}
+
+/* Adjust for screens smaller than max-w-4xl (896px) */
+@media (min-width: 640px) and (max-width: 896px) {
+  .column-rules::before {
+    left: 1rem; /* Matches px-4 padding */
+  }
+
+  .column-rules::after {
+    right: 1rem; /* Matches px-4 padding */
+  }
+}
+
+/* Newspaper Box/Frame for Pull Quotes */
+.newspaper-box {
+  border: 2px solid var(--border-dark);
+  border-top: 3px solid var(--border-dark);
+  border-bottom: 3px solid var(--border-dark);
+  padding: 1.5rem;
+  background: var(--cream-light);
+  position: relative;
+}
+
+.newspaper-box::before,
+.newspaper-box::after {
+  content: "";
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border: 2px solid var(--border-dark);
+}
+
+.newspaper-box::before {
+  top: -2px;
+  left: -2px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.newspaper-box::after {
+  top: -2px;
+  right: -2px;
+  border-left: none;
+  border-bottom: none;
+}
+
+/* Masthead Styles */
+.masthead-banner {
+  position: relative;
+  display: inline-block;
+}
+
+.masthead-info {
+  font-family: var(--font-body);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--charcoal-medium);
+  font-weight: 600;
+}
+
+/* Printer's Marks */
+.printers-mark {
+  font-family: var(--font-body);
+  font-size: 0.6rem;
+  letter-spacing: 0.05em;
+  color: var(--charcoal-light);
+  opacity: 0.6;
+}
+
+/* Utility Classes */
+.text-newspaper-red {
+  color: var(--newspaper-red);
+}
+
+.bg-newspaper-red {
+  background-color: var(--newspaper-red);
+}
+
+.border-newspaper-red {
+  border-color: var(--newspaper-red);
+}
+
+.text-editorial-green {
+  color: var(--success-green);
+}
+
+.bg-editorial-green {
+  background-color: var(--success-bg);
 }

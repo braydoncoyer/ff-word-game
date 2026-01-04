@@ -12,7 +12,7 @@ export function Instructions({ isOpen, onClose }: InstructionsProps) {
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4 overscroll-none"
+      className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4 overscroll-none"
       onClick={(e) => {
         // Close modal when clicking backdrop
         if (e.target === e.currentTarget) {
@@ -24,28 +24,28 @@ export function Instructions({ isOpen, onClose }: InstructionsProps) {
         e.preventDefault();
       }}
     >
-      <div className="bg-white rounded-lg shadow-xl max-w-sm sm:max-w-md w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+      <div className="glass-editorial rounded-sm max-w-sm sm:max-w-md w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
         <div className="p-4 sm:p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+          <div className="flex justify-between items-center mb-4 pb-4 border-b-2 border-[var(--border-dark)]">
+            <h2 className="subheadline text-2xl sm:text-3xl">
               How to Play
             </h2>
             <button
               onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+              className="text-[var(--charcoal-medium)] hover:text-[var(--charcoal)] text-3xl leading-none"
             >
               ×
             </button>
           </div>
 
-          <div className="space-y-4 text-gray-700">
-            <p className="text-base sm:text-lg font-semibold">
+          <div className="space-y-4">
+            <p className="body-text font-semibold">
               Welcome to Frantic Five!
             </p>
 
             <div>
-              <h3 className="font-bold text-gray-900 mb-2">The Rules:</h3>
-              <ul className="space-y-2 list-disc list-inside">
+              <h3 className="body-text font-bold mb-2">The Rules:</h3>
+              <ul className="space-y-2 list-disc list-inside body-text">
                 <li>
                   Find the secret word that comes alphabetically between the top
                   and bottom words.
@@ -60,28 +60,24 @@ export function Instructions({ isOpen, onClose }: InstructionsProps) {
             </div>
 
             <div>
-              <h3 className="font-bold text-gray-900 mb-2">Example:</h3>
-              <div className="bg-gray-50 rounded-lg p-3 sm:p-4 space-y-2 sm:space-y-3">
+              <h3 className="body-text font-bold mb-2">Example:</h3>
+              <div className="bg-[var(--cream-light)] border border-[var(--border-light)] rounded-sm p-3 sm:p-4 space-y-2 sm:space-y-3">
                 <div className="flex justify-center gap-1">
                   {Array.from("APPLE").map((letter, index) => (
                     <div
                       key={index}
-                      className="w-6 h-6 sm:w-8 sm:h-8 border-2 border-gray-300 rounded flex items-center justify-center text-xs sm:text-sm font-bold bg-white"
+                      className="tile-boundary w-6 h-6 sm:w-8 sm:h-8 rounded-sm flex items-center justify-center text-xs sm:text-sm"
                     >
                       {letter}
                     </div>
                   ))}
                 </div>
 
-                {/* <p className="text-center text-xs text-gray-600">
-                  (Your guess goes here)
-                </p> */}
-
                 <div className="flex justify-center gap-1">
                   {Array.from({ length: 5 }, (_, index) => (
                     <div
                       key={index}
-                      className="w-6 h-6 sm:w-8 sm:h-8 border-2 border-gray-300 rounded flex items-center justify-center text-xs sm:text-sm font-bold bg-gray-50"
+                      className="tile-empty w-6 h-6 sm:w-8 sm:h-8 rounded-sm flex items-center justify-center text-xs sm:text-sm"
                     ></div>
                   ))}
                 </div>
@@ -90,23 +86,23 @@ export function Instructions({ isOpen, onClose }: InstructionsProps) {
                   {Array.from("CHAIR").map((letter, index) => (
                     <div
                       key={index}
-                      className="w-6 h-6 sm:w-8 sm:h-8 border-2 border-gray-300 rounded flex items-center justify-center text-xs sm:text-sm font-bold bg-white"
+                      className="tile-boundary w-6 h-6 sm:w-8 sm:h-8 rounded-sm flex items-center justify-center text-xs sm:text-sm"
                     >
                       {letter}
                     </div>
                   ))}
                 </div>
 
-                <p className="text-center text-xs sm:text-sm text-gray-600 mt-4 sm:mt-6 text-balance">
-                  The secret word is between <b>APPLE</b> and <b>CHAIR</b>{" "}
+                <p className="text-center caption-text mt-4 sm:mt-6 text-balance">
+                  The secret word is between <strong>APPLE</strong> and <strong>CHAIR</strong>{" "}
                   alphabetically!
                 </p>
               </div>
             </div>
 
             <div>
-              <h3 className="font-bold text-gray-900 mb-2">Tips:</h3>
-              <ul className="space-y-1 list-disc list-inside text-xs sm:text-sm">
+              <h3 className="body-text font-bold mb-2">Tips:</h3>
+              <ul className="space-y-1 list-disc list-inside caption-text">
                 <li>
                   Think alphabetically - like looking up words in a dictionary
                 </li>
@@ -116,10 +112,10 @@ export function Instructions({ isOpen, onClose }: InstructionsProps) {
             </div>
           </div>
 
-          <div className="mt-6 flex justify-end">
+          <div className="mt-6 pt-4 border-t-2 border-[var(--border-light)] flex justify-end">
             <button
               onClick={onClose}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+              className="btn-newspaper py-2 px-6 rounded-sm"
             >
               Got it!
             </button>
@@ -134,7 +130,7 @@ export function HelpButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="hidden sm:flex fixed bottom-6 right-6 w-12 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 items-center justify-center text-xl font-bold z-40"
+      className="hidden sm:flex fixed bottom-6 right-6 w-12 h-12 btn-newspaper rounded-sm items-center justify-center text-xl font-bold z-40 border-2 border-[var(--newspaper-red-dark)]"
       title="How to Play"
     >
       ?
