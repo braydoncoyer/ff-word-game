@@ -233,49 +233,49 @@ export function GameBoard({ initialState }: GameBoardProps) {
 
   return (
     <div
-      className="flex flex-col items-center justify-between outline-none h-screen max-h-screen overflow-hidden bg-[var(--cream-bg)] column-rules"
+      className="flex flex-col items-center justify-start sm:justify-between outline-none h-screen max-h-screen overflow-hidden bg-[var(--cream-bg)] column-rules"
       tabIndex={0}
       onKeyDown={handleKeyDown}
     >
       {/* Top section with game content */}
-      <div className="flex flex-col items-center gap-3 sm:gap-4 md:gap-6 w-full flex-1 min-h-0 overflow-y-auto p-3 sm:p-4 md:p-6">
+      <div className="flex flex-col items-center gap-4 sm:gap-4 md:gap-6 w-full sm:flex-1 min-h-0 overflow-y-auto p-4 sm:p-4 md:p-6 py-6 sm:py-4">
         {/* Newspaper Masthead */}
-        <div className="text-center space-y-2 mb-4">
-          <div className="masthead-info mb-2">
+        <div className="text-center space-y-1 sm:space-y-2 mb-2 sm:mb-4">
+          <div className="masthead-info mb-1 sm:mb-2 text-[0.65rem] sm:text-[0.7rem]">
             Vol. 1, No. {Math.floor((new Date().getTime() - new Date("2025-01-01").getTime()) / (1000 * 60 * 60 * 24)) + 1} • {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
           </div>
-          <h1 className="headline text-3xl sm:text-4xl md:text-5xl lg:text-6xl uppercase tracking-wide masthead-banner">
+          <h1 className="headline text-3xl sm:text-5xl md:text-6xl lg:text-7xl uppercase tracking-wide masthead-banner">
             Frantic Five
           </h1>
-          <p className="label-caps text-[0.7rem] tracking-widest" style={{ letterSpacing: "0.15em" }}>
+          <p className="label-caps text-[0.7rem] sm:text-[0.75rem] tracking-widest" style={{ letterSpacing: "0.15em" }}>
             Daily Word Challenge
           </p>
 
           {/* Ornamental Divider */}
           <div className="flex justify-center w-full">
-            <div className="ornament-divider w-48">
+            <div className="ornament-divider w-32 sm:w-48">
               <span>❦</span>
             </div>
           </div>
 
           {/* Guess Counter */}
           {gameState.guesses.length > 0 && (
-            <div className="label-caps mt-2">
+            <div className="label-caps mt-1 sm:mt-2">
               Guess {gameState.guesses.length}
             </div>
           )}
         </div>
 
-        <div className="flex flex-col gap-3 sm:gap-4 md:gap-6 w-full max-w-sm sm:max-w-md md:max-w-xl lg:max-w-4xl px-2">
+        <div className="flex flex-col gap-4 sm:gap-4 md:gap-6 w-full max-w-sm sm:max-w-md md:max-w-xl lg:max-w-4xl px-2">
           {/* Top Word */}
           <div className="text-center">
-            <div className="flex justify-center gap-2 md:gap-3">
+            <div className="flex justify-center gap-1.5 sm:gap-2 md:gap-3">
               {Array.from(gameState.currentTop).map((letter, index) => (
                 <div
                   key={index}
                   className={`tile-boundary ${
                     gameState.completed ? "tile-completed" : ""
-                  } w-10 sm:w-12 md:w-16 lg:w-24 aspect-square rounded-sm flex items-center justify-center text-lg sm:text-xl md:text-2xl lg:text-4xl uppercase`}
+                  } w-16 sm:w-12 md:w-16 lg:w-24 aspect-square rounded-sm flex items-center justify-center text-2xl sm:text-xl md:text-2xl lg:text-4xl uppercase`}
                 >
                   {letter}
                 </div>
@@ -285,13 +285,13 @@ export function GameBoard({ initialState }: GameBoardProps) {
 
           {/* Current Guess / Secret Word - Larger middle tiles */}
           <div className="text-center">
-            <div className="flex justify-center gap-2 md:gap-3">
+            <div className="flex justify-center gap-1.5 sm:gap-2 md:gap-3">
               {gameState.completed && gameState.secretWord
                 ? // Show secret word when completed
                   Array.from(gameState.secretWord).map((letter, index) => (
                     <div
                       key={index}
-                      className="tile-success w-12 sm:w-14 md:w-22 lg:w-28 aspect-square rounded-sm flex items-center justify-center text-lg sm:text-xl md:text-3xl lg:text-4xl uppercase fade-in"
+                      className="tile-success w-[4.5rem] sm:w-14 md:w-22 lg:w-28 aspect-square rounded-sm flex items-center justify-center text-3xl sm:text-xl md:text-3xl lg:text-4xl uppercase fade-in"
                     >
                       {letter}
                     </div>
@@ -305,7 +305,7 @@ export function GameBoard({ initialState }: GameBoardProps) {
                         disabled={gameState.completed}
                         className={`${
                           letter ? "tile-guess" : "tile-empty"
-                        } w-12 sm:w-14 md:w-22 lg:w-28 aspect-square rounded-sm flex items-center justify-center text-lg sm:text-xl md:text-3xl lg:text-4xl uppercase ${
+                        } w-[4.5rem] sm:w-14 md:w-22 lg:w-28 aspect-square rounded-sm flex items-center justify-center text-3xl sm:text-xl md:text-3xl lg:text-4xl uppercase ${
                           letter ? "cursor-pointer" : "cursor-default"
                         }`}
                       >
@@ -318,13 +318,13 @@ export function GameBoard({ initialState }: GameBoardProps) {
 
           {/* Bottom Word */}
           <div className="text-center">
-            <div className="flex justify-center gap-2 md:gap-3">
+            <div className="flex justify-center gap-1.5 sm:gap-2 md:gap-3">
               {Array.from(gameState.currentBottom).map((letter, index) => (
                 <div
                   key={index}
                   className={`tile-boundary ${
                     gameState.completed ? "tile-completed" : ""
-                  } w-10 sm:w-12 md:w-16 lg:w-24 aspect-square rounded-sm flex items-center justify-center text-lg sm:text-xl md:text-2xl lg:text-4xl uppercase`}
+                  } w-16 sm:w-12 md:w-16 lg:w-24 aspect-square rounded-sm flex items-center justify-center text-2xl sm:text-xl md:text-2xl lg:text-4xl uppercase`}
                 >
                   {letter}
                 </div>

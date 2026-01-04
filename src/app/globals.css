@@ -336,6 +336,14 @@ body > * {
   right: 5%;
 }
 
+/* Hide column rules on mobile */
+@media (max-width: 640px) {
+  .column-rules::before,
+  .column-rules::after {
+    display: none;
+  }
+}
+
 /* Newspaper Box/Frame for Pull Quotes */
 .newspaper-box {
   border: 2px solid var(--border-dark);
