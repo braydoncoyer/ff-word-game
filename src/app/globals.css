@@ -1,26 +1,415 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* NEWSPAPER EDITORIAL Design System */
+
+  /* Background Colors - Cream Palette */
+  --cream-bg: #FAF8F3;
+  --cream-light: #FDFCFA;
+  --cream-dark: #F5F3EE;
+
+  /* Text Colors - Charcoal Palette */
+  --charcoal: #1A1A1A;
+  --charcoal-medium: #3D3D3D;
+  --charcoal-light: #6B6B6B;
+
+  /* Accent Colors - Newspaper Red */
+  --newspaper-red: #C41E3A;
+  --newspaper-red-dark: #A01729;
+  --newspaper-red-light: #E8DAE0;
+
+  /* Border Colors */
+  --border-dark: #2D2D2D;
+  --border-medium: #8B8B8B;
+  --border-light: #D4D4D4;
+
+  /* Success State - Muted Editorial Green */
+  --success-green: #2C5F2D;
+  --success-bg: #E8F3E8;
+
+  /* Typography */
+  --font-display: var(--font-playfair);
+  --font-body: var(--font-crimson);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-crimson);
+  --font-display: var(--font-playfair);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-crimson), Georgia, serif;
+  background: var(--cream-bg);
+  color: var(--charcoal);
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Subtle Paper Texture Overlay */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1;
+}
+
+body > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Newspaper Rules (Horizontal Dividers) */
+.newspaper-rule {
+  width: 100%;
+  height: 1px;
+  background: var(--border-dark);
+  margin: 2rem 0;
+}
+
+.newspaper-rule-double {
+  width: 100%;
+  border-top: 3px double var(--border-dark);
+  margin: 2rem 0;
+}
+
+.newspaper-rule-light {
+  width: 100%;
+  height: 1px;
+  background: var(--border-light);
+  margin: 1.5rem 0;
+}
+
+/* Tile Styles - Newspaper Editorial */
+.tile-boundary {
+  background: var(--cream-dark);
+  border: 2px solid var(--border-dark);
+  color: var(--charcoal);
+  font-family: var(--font-crimson);
+  font-weight: 700;
+  transition: none;
+}
+
+.tile-guess {
+  background: white;
+  border: 2px solid var(--border-dark);
+  color: var(--charcoal);
+  font-family: var(--font-crimson);
+  font-weight: 700;
+  transition: border-color 200ms ease;
+}
+
+.tile-guess:hover {
+  border-color: var(--newspaper-red);
+}
+
+.tile-empty {
+  background: white;
+  border: 2px dashed var(--border-medium);
+  color: var(--charcoal);
+  transition: border-color 200ms ease;
+}
+
+.tile-success {
+  background: var(--success-bg);
+  border: 2px solid var(--success-green);
+  color: var(--success-green);
+  font-family: var(--font-crimson);
+  font-weight: 700;
+}
+
+.tile-completed {
+  background: #E5E5E5;
+  border: 2px solid var(--border-light);
+  color: var(--charcoal-light);
+  opacity: 0.6;
+}
+
+/* Keyboard Key Styles - Editorial Buttons */
+.key-editorial {
+  background: white;
+  border: 1px solid var(--border-medium);
+  color: var(--charcoal);
+  font-family: var(--font-crimson);
+  font-weight: 600;
+  transition: all 150ms ease;
+}
+
+.key-editorial:hover:not(:disabled) {
+  border-color: var(--newspaper-red);
+  background: var(--cream-light);
+}
+
+.key-editorial:active:not(:disabled) {
+  background: var(--newspaper-red-light);
+  border-color: var(--newspaper-red);
+}
+
+.key-editorial:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Button - Newspaper Red Accent */
+.btn-newspaper {
+  background: var(--newspaper-red);
+  color: white;
+  border: 1px solid var(--newspaper-red-dark);
+  font-family: var(--font-crimson);
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  transition: background-color 150ms ease;
+}
+
+.btn-newspaper:hover {
+  background: var(--newspaper-red-dark);
+}
+
+.btn-newspaper:active {
+  background: #8B1220;
+}
+
+/* Editorial Card - Clean Content Box */
+.editorial-card {
+  background: var(--cream-light);
+  border: 2px solid var(--border-dark);
+  padding: 1.5rem;
+}
+
+/* Glass Effect for Modals - Light Editorial */
+.glass-editorial {
+  background: rgba(250, 248, 243, 0.95);
+  backdrop-filter: blur(10px);
+  border: 2px solid var(--border-dark);
+}
+
+/* Typography Helpers */
+.headline {
+  font-family: var(--font-display);
+  font-weight: 900;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+  color: var(--charcoal);
+}
+
+.subheadline {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+  color: var(--charcoal);
+}
+
+.body-text {
+  font-family: var(--font-body);
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--charcoal);
+}
+
+.caption-text {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--charcoal-medium);
+}
+
+.label-caps {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--charcoal-medium);
+}
+
+/* Animations - Minimal and Subtle */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.fade-in {
+  animation: fadeIn 200ms ease;
+}
+
+.fade-out {
+  animation: fadeOut 200ms ease;
+}
+
+/* Scrollbar - Editorial Style */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--cream-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-medium);
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-dark);
+}
+
+/* Selection */
+::selection {
+  background: var(--newspaper-red);
+  color: white;
+}
+
+/* Focus States - Newspaper Red */
+*:focus-visible {
+  outline: 2px solid var(--newspaper-red);
+  outline-offset: 2px;
+}
+
+/* Newspaper Ornamental Elements */
+.ornament-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin: 1.5rem 0;
+  color: var(--charcoal-medium);
+}
+
+.ornament-divider::before,
+.ornament-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-medium);
+}
+
+/* Column Rules - Newspaper Style */
+.column-rules {
+  position: relative;
+}
+
+.column-rules::before,
+.column-rules::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--border-light);
+}
+
+.column-rules::before {
+  left: 5%;
+}
+
+.column-rules::after {
+  right: 5%;
+}
+
+/* Newspaper Box/Frame for Pull Quotes */
+.newspaper-box {
+  border: 2px solid var(--border-dark);
+  border-top: 3px solid var(--border-dark);
+  border-bottom: 3px solid var(--border-dark);
+  padding: 1.5rem;
+  background: var(--cream-light);
+  position: relative;
+}
+
+.newspaper-box::before,
+.newspaper-box::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border: 2px solid var(--border-dark);
+}
+
+.newspaper-box::before {
+  top: -2px;
+  left: -2px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.newspaper-box::after {
+  top: -2px;
+  right: -2px;
+  border-left: none;
+  border-bottom: none;
+}
+
+/* Masthead Styles */
+.masthead-banner {
+  position: relative;
+  display: inline-block;
+}
+
+.masthead-info {
+  font-family: var(--font-body);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--charcoal-medium);
+  font-weight: 600;
+}
+
+/* Printer's Marks */
+.printers-mark {
+  font-family: var(--font-body);
+  font-size: 0.6rem;
+  letter-spacing: 0.05em;
+  color: var(--charcoal-light);
+  opacity: 0.6;
+}
+
+/* Utility Classes */
+.text-newspaper-red {
+  color: var(--newspaper-red);
+}
+
+.bg-newspaper-red {
+  background-color: var(--newspaper-red);
+}
+
+.border-newspaper-red {
+  border-color: var(--newspaper-red);
+}
+
+.text-editorial-green {
+  color: var(--success-green);
+}
+
+.bg-editorial-green {
+  background-color: var(--success-bg);
 }

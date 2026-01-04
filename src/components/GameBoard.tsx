@@ -92,15 +92,10 @@ export function GameBoard({ initialState }: GameBoardProps) {
 
   if (!gameState) {
     return (
-      <div
-        className="flex items-center justify-center min-h-screen"
-        style={{
-          background: "linear-gradient(to top, #1B2C6F, #070E53)",
-        }}
-      >
-        <div className="text-center bg-white/20 rounded-2xl p-8 backdrop-blur-sm border-2 border-white/30 shadow-xl">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-white font-bold drop-shadow-sm">
+      <div className="flex items-center justify-center min-h-screen bg-[var(--cream-bg)]">
+        <div className="editorial-card text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--newspaper-red)] mx-auto mb-4"></div>
+          <p className="body-text font-bold">
             Loading today&apos;s puzzle...
           </p>
         </div>
@@ -238,41 +233,37 @@ export function GameBoard({ initialState }: GameBoardProps) {
 
   return (
     <div
-      className="flex flex-col items-center justify-between outline-none h-screen max-h-screen overflow-hidden"
-      style={{
-        background: "linear-gradient(to top, #1B2C6F, #070E53)",
-      }}
+      className="flex flex-col items-center justify-between outline-none h-screen max-h-screen overflow-hidden bg-[var(--cream-bg)] column-rules"
       tabIndex={0}
       onKeyDown={handleKeyDown}
     >
       {/* Top section with game content */}
       <div className="flex flex-col items-center gap-3 sm:gap-4 md:gap-6 w-full flex-1 min-h-0 overflow-y-auto p-3 sm:p-4 md:p-6">
-        <div className="text-center space-y-2">
-          <h1
-            className={`text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-1 sm:mb-2 md:mb-4 ${
-              gameState.completed ? "text-blue-200" : "text-white"
-            } drop-shadow-lg`}
-          >
+        {/* Newspaper Masthead */}
+        <div className="text-center space-y-2 mb-4">
+          <div className="masthead-info mb-2">
+            Vol. 1, No. {Math.floor((new Date().getTime() - new Date("2025-01-01").getTime()) / (1000 * 60 * 60 * 24)) + 1} • {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+          </div>
+          <h1 className="headline text-3xl sm:text-4xl md:text-5xl lg:text-6xl uppercase tracking-wide masthead-banner">
             Frantic Five
           </h1>
-          <p
-            className={`text-sm sm:text-base md:text-lg font-medium px-2 ${
-              gameState.completed ? "text-blue-200" : "text-blue-100"
-            } drop-shadow-md`}
-          >
-            Guess the word between the top and bottom words
+          <p className="label-caps text-[0.7rem] tracking-widest" style={{ letterSpacing: "0.15em" }}>
+            Daily Word Challenge
           </p>
 
-          {/* Guess Counter */}
-          <div
-            className={`text-xs sm:text-sm md:text-base font-semibold ${
-              gameState.completed ? "text-blue-200" : "text-blue-100"
-            } drop-shadow-sm`}
-          >
-            {gameState.guesses.length > 0 && (
-              <span>Guess {gameState.guesses.length}</span>
-            )}
+          {/* Ornamental Divider */}
+          <div className="flex justify-center w-full">
+            <div className="ornament-divider w-48">
+              <span>❦</span>
+            </div>
           </div>
+
+          {/* Guess Counter */}
+          {gameState.guesses.length > 0 && (
+            <div className="label-caps mt-2">
+              Guess {gameState.guesses.length}
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col gap-3 sm:gap-4 md:gap-6 w-full max-w-sm sm:max-w-md md:max-w-xl lg:max-w-4xl px-2">
@@ -282,16 +273,9 @@ export function GameBoard({ initialState }: GameBoardProps) {
               {Array.from(gameState.currentTop).map((letter, index) => (
                 <div
                   key={index}
-                  className={`w-10 sm:w-12 md:w-16 lg:w-28 aspect-square border-2 rounded-lg lg:rounded-2xl flex items-center justify-center text-lg sm:text-xl md:text-2xl lg:text-4xl font-bold uppercase shadow-lg ${
-                    gameState.completed ? "text-gray-400" : "text-white"
-                  }`}
-                  style={{
-                    backgroundColor: gameState.completed
-                      ? "#6B7280"
-                      : "#0C1947",
-                    borderColor: gameState.completed ? "#9CA3AF" : "#3C4B81",
-                    textShadow: "1px 1px 2px rgba(0,0,0,0.5)",
-                  }}
+                  className={`tile-boundary ${
+                    gameState.completed ? "tile-completed" : ""
+                  } w-10 sm:w-12 md:w-16 lg:w-24 aspect-square rounded-sm flex items-center justify-center text-lg sm:text-xl md:text-2xl lg:text-4xl uppercase`}
                 >
                   {letter}
                 </div>
@@ -299,7 +283,7 @@ export function GameBoard({ initialState }: GameBoardProps) {
             </div>
           </div>
 
-          {/* Current Guess / Secret Word */}
+          {/* Current Guess / Secret Word - Larger middle tiles */}
           <div className="text-center">
             <div className="flex justify-center gap-2 md:gap-3">
               {gameState.completed && gameState.secretWord
@@ -307,7 +291,7 @@ export function GameBoard({ initialState }: GameBoardProps) {
                   Array.from(gameState.secretWord).map((letter, index) => (
                     <div
                       key={index}
-                      className="w-12 sm:w-14 md:w-20 lg:w-28 aspect-square border-2 border-emerald-300 bg-emerald-500 rounded-lg lg:rounded-2xl flex items-center justify-center text-lg sm:text-xl md:text-3xl lg:text-4xl font-bold uppercase text-white shadow-lg"
+                      className="tile-success w-12 sm:w-14 md:w-22 lg:w-28 aspect-square rounded-sm flex items-center justify-center text-lg sm:text-xl md:text-3xl lg:text-4xl uppercase fade-in"
                     >
                       {letter}
                     </div>
@@ -319,17 +303,11 @@ export function GameBoard({ initialState }: GameBoardProps) {
                         key={index}
                         onClick={() => handleTileClick(index)}
                         disabled={gameState.completed}
-                        className={`w-12 sm:w-14 md:w-20 lg:w-28 aspect-square border-2 rounded-lg lg:rounded-2xl flex items-center justify-center text-lg sm:text-xl md:text-3xl lg:text-4xl font-bold uppercase transition-all duration-200 shadow-lg ${
-                          letter
-                            ? "text-white hover:scale-105 cursor-pointer"
-                            : "text-white cursor-default"
+                        className={`${
+                          letter ? "tile-guess" : "tile-empty"
+                        } w-12 sm:w-14 md:w-22 lg:w-28 aspect-square rounded-sm flex items-center justify-center text-lg sm:text-xl md:text-3xl lg:text-4xl uppercase ${
+                          letter ? "cursor-pointer" : "cursor-default"
                         }`}
-                        style={{
-                          backgroundColor: letter ? "#576290" : "",
-                          borderColor: letter ? "#7B8AB9" : "#3C4B81",
-                          borderStyle: letter ? "solid" : "dashed",
-                          textShadow: "1px 1px 2px rgba(0,0,0,0.1)",
-                        }}
                       >
                         {letter}
                       </button>
@@ -344,16 +322,9 @@ export function GameBoard({ initialState }: GameBoardProps) {
               {Array.from(gameState.currentBottom).map((letter, index) => (
                 <div
                   key={index}
-                  className={`w-10 sm:w-12 md:w-16 lg:w-28 aspect-square border-2 rounded-lg lg:rounded-2xl flex items-center justify-center text-lg sm:text-xl md:text-2xl lg:text-4xl font-bold uppercase shadow-lg ${
-                    gameState.completed ? "text-gray-400" : "text-white"
-                  }`}
-                  style={{
-                    backgroundColor: gameState.completed
-                      ? "#6B7280"
-                      : "#0C1947",
-                    borderColor: gameState.completed ? "#9CA3AF" : "#3C4B81",
-                    textShadow: "1px 1px 2px rgba(0,0,0,0.5)",
-                  }}
+                  className={`tile-boundary ${
+                    gameState.completed ? "tile-completed" : ""
+                  } w-10 sm:w-12 md:w-16 lg:w-24 aspect-square rounded-sm flex items-center justify-center text-lg sm:text-xl md:text-2xl lg:text-4xl uppercase`}
                 >
                   {letter}
                 </div>
@@ -364,31 +335,33 @@ export function GameBoard({ initialState }: GameBoardProps) {
 
         {/* Message */}
         {message && !gameState.completed && (
-          <div className="text-center p-2 sm:p-3 md:p-4 rounded-lg font-semibold text-xs sm:text-sm md:text-base max-w-lg bg-red-100 text-red-800 border border-red-200">
-            {message}
+          <div className="text-center p-3 sm:p-4 max-w-lg border-2 border-[var(--newspaper-red)] bg-[var(--newspaper-red-light)] rounded-sm fade-in">
+            <p className="body-text text-[var(--newspaper-red-dark)] font-semibold">
+              {message}
+            </p>
           </div>
         )}
 
         {/* Game completed state */}
         {gameState.completed && (
-          <div className="text-center space-y-4 sm:space-y-6 w-full max-w-sm sm:max-w-md md:max-w-lg">
+          <div className="newspaper-box text-center space-y-4 sm:space-y-6 w-full max-w-sm sm:max-w-md md:max-w-lg fade-in">
             {gameState.won ? (
-              <div className="space-y-2 sm:space-y-4">
-                <div className="text-base sm:text-lg md:text-xl font-bold text-emerald-400">
-                  🎉 Congratulations! 🎉
+              <div className="space-y-2">
+                <div className="subheadline text-2xl sm:text-3xl text-editorial-green">
+                  Solved!
                 </div>
-                <div className="text-xs sm:text-sm md:text-base text-white">
-                  Solved in {gameState.guesses.length} guess
-                  {gameState.guesses.length !== 1 ? "es" : ""}!
+                <div className="body-text">
+                  Completed in {gameState.guesses.length} guess
+                  {gameState.guesses.length !== 1 ? "es" : ""}
                 </div>
               </div>
             ) : (
-              <div className="space-y-2 sm:space-y-4">
-                <div className="text-base sm:text-lg md:text-xl font-bold text-gray-600">
-                  😞 Better luck next time!
+              <div className="space-y-2">
+                <div className="subheadline text-2xl sm:text-3xl">
+                  Puzzle Complete
                 </div>
-                <div className="text-xs sm:text-sm md:text-base text-gray-500">
-                  Used all {gameState.guesses.length} guesses.
+                <div className="body-text text-[var(--charcoal-medium)]">
+                  {gameState.guesses.length} guesses used
                 </div>
               </div>
             )}
@@ -400,7 +373,7 @@ export function GameBoard({ initialState }: GameBoardProps) {
         )}
 
         {isPending && (
-          <div className="text-center text-white font-semibold text-xs sm:text-sm md:text-base drop-shadow-sm">
+          <div className="text-center caption-text font-semibold fade-in">
             Checking your guess...
           </div>
         )}
@@ -445,6 +418,20 @@ export function GameBoard({ initialState }: GameBoardProps) {
       />
 
       <HelpButton onClick={() => setShowInstructions(true)} />
+
+      {/* Printer's Marks - Newspaper Footer */}
+      <div className="printers-mark text-center py-4">
+        Established 2025 • Made by{" "}
+        <a
+          href="https://braydoncoyer.dev"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-[var(--newspaper-red)] transition-colors duration-200"
+        >
+          Braydon
+        </a>{" "}
+        • All Rights Reserved
+      </div>
     </div>
   );
 }
