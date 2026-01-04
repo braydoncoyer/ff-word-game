@@ -95,9 +95,7 @@ export function GameBoard({ initialState }: GameBoardProps) {
       <div className="flex items-center justify-center min-h-screen bg-[var(--cream-bg)]">
         <div className="editorial-card text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--newspaper-red)] mx-auto mb-4"></div>
-          <p className="body-text font-bold">
-            Loading today&apos;s puzzle...
-          </p>
+          <p className="body-text font-bold">Loading today&apos;s puzzle...</p>
         </div>
       </div>
     );
@@ -239,31 +237,58 @@ export function GameBoard({ initialState }: GameBoardProps) {
     >
       {/* Top section with game content */}
       <div className="flex flex-col items-center gap-4 sm:gap-4 md:gap-6 w-full sm:flex-1 min-h-0 overflow-y-auto p-4 sm:p-4 md:p-6 py-6 sm:py-4">
-        {/* Newspaper Masthead */}
-        <div className="text-center space-y-1 sm:space-y-2 mb-2 sm:mb-4">
-          <div className="masthead-info mb-1 sm:mb-2 text-[0.65rem] sm:text-[0.7rem]">
-            Vol. 1, No. {Math.floor((new Date().getTime() - new Date("2025-01-01").getTime()) / (1000 * 60 * 60 * 24)) + 1} • {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
-          </div>
-          <h1 className="headline text-3xl sm:text-5xl md:text-6xl lg:text-7xl uppercase tracking-wide masthead-banner">
-            Frantic Five
-          </h1>
-          <p className="label-caps text-[0.7rem] sm:text-[0.75rem] tracking-widest" style={{ letterSpacing: "0.15em" }}>
+        {/* Newspaper Masthead - Traditional Style */}
+        <div className="text-center w-full max-w-4xl px-4 mb-3 sm:mb-4">
+          {/* Tagline above title */}
+          <p className="label-caps text-[0.6rem] sm:text-[0.65rem] mb-1 sm:mb-2 tracking-wider">
             Daily Word Challenge
           </p>
 
-          {/* Ornamental Divider */}
-          <div className="flex justify-center w-full">
-            <div className="ornament-divider w-32 sm:w-48">
-              <span>❦</span>
-            </div>
+          {/* Title */}
+          <h1 className="masthead-title text-4xl sm:text-6xl md:text-7xl lg:text-8xl mb-2 sm:mb-3">
+            Frantic Five
+          </h1>
+
+          {/* Top Rule */}
+          <div className="newspaper-rule-thick" />
+
+          {/* Info Line - Three columns: Challenge (left), Guess (center), Vol/Date (right) */}
+          <div className="masthead-info-line text-[0.6rem] sm:text-[0.65rem]">
+            <span className="masthead-col-left hidden sm:inline">
+              Daily Word Challenge
+            </span>
+            <span className="masthead-col-left sm:hidden">Challenge</span>
+            {gameState.guesses.length > 0 ? (
+              <span className="masthead-col-center">
+                Guess {gameState.guesses.length}
+              </span>
+            ) : (
+              <span className="masthead-col-center">—</span>
+            )}
+            <span className="masthead-col-right hidden sm:inline">
+              Vol. 1, No.{" "}
+              {Math.floor(
+                (new Date().getTime() - new Date("2025-01-01").getTime()) /
+                  (1000 * 60 * 60 * 24)
+              ) + 1}{" "}
+              •{" "}
+              {new Date().toLocaleDateString("en-US", {
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </span>
+            <span className="masthead-col-right sm:hidden">
+              Vol. 1, No.{" "}
+              {Math.floor(
+                (new Date().getTime() - new Date("2025-01-01").getTime()) /
+                  (1000 * 60 * 60 * 24)
+              ) + 1}
+            </span>
           </div>
 
-          {/* Guess Counter */}
-          {gameState.guesses.length > 0 && (
-            <div className="label-caps mt-1 sm:mt-2">
-              Guess {gameState.guesses.length}
-            </div>
-          )}
+          {/* Bottom Rule */}
+          <div className="newspaper-rule-thick" />
         </div>
 
         <div className="flex flex-col gap-4 sm:gap-4 md:gap-6 w-full max-w-sm sm:max-w-md md:max-w-xl lg:max-w-4xl px-2">
@@ -275,7 +300,7 @@ export function GameBoard({ initialState }: GameBoardProps) {
                   key={index}
                   className={`tile-boundary ${
                     gameState.completed ? "tile-completed" : ""
-                  } w-16 sm:w-12 md:w-16 lg:w-24 aspect-square rounded-sm flex items-center justify-center text-2xl sm:text-xl md:text-2xl lg:text-4xl uppercase`}
+                  } w-16 sm:w-12 md:w-16 lg:w-24 aspect-square rounded-md flex items-center justify-center text-2xl sm:text-xl md:text-2xl lg:text-4xl uppercase`}
                 >
                   {letter}
                 </div>
@@ -291,7 +316,7 @@ export function GameBoard({ initialState }: GameBoardProps) {
                   Array.from(gameState.secretWord).map((letter, index) => (
                     <div
                       key={index}
-                      className="tile-success w-[4.5rem] sm:w-14 md:w-22 lg:w-28 aspect-square rounded-sm flex items-center justify-center text-3xl sm:text-xl md:text-3xl lg:text-4xl uppercase fade-in"
+                      className="tile-success w-[4.5rem] sm:w-14 md:w-22 lg:w-28 aspect-square rounded-md flex items-center justify-center text-3xl sm:text-xl md:text-3xl lg:text-4xl uppercase fade-in"
                     >
                       {letter}
                     </div>
@@ -305,7 +330,7 @@ export function GameBoard({ initialState }: GameBoardProps) {
                         disabled={gameState.completed}
                         className={`${
                           letter ? "tile-guess" : "tile-empty"
-                        } w-[4.5rem] sm:w-14 md:w-22 lg:w-28 aspect-square rounded-sm flex items-center justify-center text-3xl sm:text-xl md:text-3xl lg:text-4xl uppercase ${
+                        } w-[4.5rem] sm:w-14 md:w-22 lg:w-28 aspect-square rounded-md flex items-center justify-center text-3xl sm:text-xl md:text-3xl lg:text-4xl uppercase ${
                           letter ? "cursor-pointer" : "cursor-default"
                         }`}
                       >
@@ -324,7 +349,7 @@ export function GameBoard({ initialState }: GameBoardProps) {
                   key={index}
                   className={`tile-boundary ${
                     gameState.completed ? "tile-completed" : ""
-                  } w-16 sm:w-12 md:w-16 lg:w-24 aspect-square rounded-sm flex items-center justify-center text-2xl sm:text-xl md:text-2xl lg:text-4xl uppercase`}
+                  } w-16 sm:w-12 md:w-16 lg:w-24 aspect-square rounded-md flex items-center justify-center text-2xl sm:text-xl md:text-2xl lg:text-4xl uppercase`}
                 >
                   {letter}
                 </div>
@@ -339,36 +364,6 @@ export function GameBoard({ initialState }: GameBoardProps) {
             <p className="body-text text-[var(--newspaper-red-dark)] font-semibold">
               {message}
             </p>
-          </div>
-        )}
-
-        {/* Game completed state */}
-        {gameState.completed && (
-          <div className="newspaper-box text-center space-y-4 sm:space-y-6 w-full max-w-sm sm:max-w-md md:max-w-lg fade-in">
-            {gameState.won ? (
-              <div className="space-y-2">
-                <div className="subheadline text-2xl sm:text-3xl text-editorial-green">
-                  Solved!
-                </div>
-                <div className="body-text">
-                  Completed in {gameState.guesses.length} guess
-                  {gameState.guesses.length !== 1 ? "es" : ""}
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <div className="subheadline text-2xl sm:text-3xl">
-                  Puzzle Complete
-                </div>
-                <div className="body-text text-[var(--charcoal-medium)]">
-                  {gameState.guesses.length} guesses used
-                </div>
-              </div>
-            )}
-
-            <div className="flex justify-center">
-              <ShareButton gameState={gameState} />
-            </div>
           </div>
         )}
 
@@ -398,12 +393,63 @@ export function GameBoard({ initialState }: GameBoardProps) {
         </div>
       )} */}
 
-      {/* Bottom section with keyboard */}
+      {/* Bottom section - Keyboard or Completion State */}
       <div className="w-full flex justify-center flex-shrink-0">
-        <Keyboard
-          onKeyPress={handleKeyPress}
-          disabled={isPending || gameState.completed}
-        />
+        {!gameState.completed ? (
+          <Keyboard onKeyPress={handleKeyPress} disabled={isPending} />
+        ) : (
+          <div className="w-full flex justify-center fade-in py-6 px-4">
+            <div className="completion-box">
+              {/* Top double rule */}
+              <div className="newspaper-rule-thick mb-4" />
+
+              {/* Headline */}
+              <div
+                className={`completion-headline text-xl sm:text-2xl text-left mb-4 ${
+                  gameState.won ? "won" : ""
+                }`}
+              >
+                You solved today&apos;s puzzle in {gameState.guesses.length}{" "}
+                {gameState.guesses.length === 1 ? "guess" : "guesses"}!
+              </div>
+
+              {/* Thin separator */}
+              <div className="newspaper-rule-thin mb-4" />
+
+              {/* Statistics Table - Single Row */}
+              <div className="stats-table">
+                {/* Pattern Column */}
+                <div className="stats-pattern">
+                  <div className="stats-pattern-label">Pattern:</div>
+                  <div className="stats-pattern-emojis">
+                    {(gameState.guessDirections || []).map(
+                      (direction, index) => {
+                        switch (direction) {
+                          case "up":
+                            return <span key={index}>⬆️</span>;
+                          case "down":
+                            return <span key={index}>⬇️</span>;
+                          case "win":
+                            return <span key={index}>✅</span>;
+                          default:
+                            return <span key={index}>🔍</span>;
+                        }
+                      }
+                    )}
+                  </div>
+                </div>
+
+                {/* Share Button Column */}
+                <div>
+                  <ShareButton gameState={gameState} />
+                </div>
+              </div>
+
+              {/* Bottom double rule */}
+              <div className="newspaper-rule-thick mt-4" />
+            </div>
+          </div>
+        )}
       </div>
 
       <Instructions

@@ -92,7 +92,7 @@ export function ShareButton({ gameState }: ShareButtonProps) {
   return (
     <button
       onClick={handleShare}
-      className="btn-newspaper py-3 px-6 rounded-sm flex items-center gap-2"
+      className="btn-newspaper py-2 px-4 sm:py-3 sm:px-6 rounded-sm flex items-center gap-2 text-sm sm:text-base"
     >
       {copied ? (
         <span>Copied to Clipboard</span>
