@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
+import { vemetric } from "@vemetric/web";
 import {
   submitGuess,
   validateWord,
@@ -180,6 +181,14 @@ export function GameBoard({ initialState }: GameBoardProps) {
               setMessage(""); // Clear any previous messages
             }
             if (result.success && result.newState) {
+              if (result.newState.completed && !gameState.completed) {
+                vemetric.trackEvent("PuzzleSolved", {
+                  eventData: {
+                    won: result.newState.won,
+                    guesses: result.newState.guesses.length,
+                  },
+                });
+              }
               setGameState(result.newState);
               setCurrentGuess(Array(5).fill(""));
             }
